@@ -1,22 +1,37 @@
 <script setup lang="ts">
-import { ref, onMounted, computed } from 'vue'
-import { useRouter } from 'vue-router'
+import { ref, onMounted, computed, watch } from 'vue'
+import { useRouter, useRoute } from 'vue-router'
 import { useArchiveStore } from '@/stores/archive'
 import MysticButton from '@/components/common/MysticButton.vue'
 import type { DivinationResult, SynastryResult, YearlyResult } from '@/types'
 
 const router = useRouter()
+const route = useRoute()
 const archiveStore = useArchiveStore()
 const isLoading = ref(true)
 const showConfirmClear = ref(false)
 const activeFilter = ref<'all' | 'divination' | 'synastry' | 'yearly'>('all')
 
-onMounted(() => {
+const loadRecordsData = () => {
+  isLoading.value = true
   archiveStore.loadRecords()
   setTimeout(() => {
     isLoading.value = false
-  }, 500)
+  }, 300)
+}
+
+onMounted(() => {
+  loadRecordsData()
 })
+
+watch(
+  () => route.fullPath,
+  (newPath, oldPath) => {
+    if (newPath === '/archive' && oldPath !== '/archive') {
+      loadRecordsData()
+    }
+  }
+)
 
 const formatDate = (timestamp: number) => {
   return new Date(timestamp).toLocaleDateString('zh-CN', {

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted, computed } from 'vue'
+import { ref, onMounted, computed, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useYearlyStore } from '@/stores/yearly'
 import GeometryChart from '@/components/result/GeometryChart.vue'
@@ -22,8 +22,11 @@ const yearMeaning = computed(() => {
   return yearNumberMeanings[result.value.yearNumber] || yearNumberMeanings[9]
 })
 
-onMounted(() => {
+const loadResultData = () => {
   const id = route.params.id as string
+  isLoading.value = true
+  notFound.value = false
+  
   if (store.currentResult?.id === id) {
     isLoading.value = false
     return
@@ -34,7 +37,20 @@ onMounted(() => {
     notFound.value = true
   }
   isLoading.value = false
+}
+
+onMounted(() => {
+  loadResultData()
 })
+
+watch(
+  () => route.params.id,
+  (newId, oldId) => {
+    if (newId !== oldId) {
+      loadResultData()
+    }
+  }
+)
 
 const formatDate = (timestamp: number) => {
   return new Date(timestamp).toLocaleString('zh-CN', {
@@ -119,7 +135,14 @@ const scrollToTop = () => {
       </div>
     </div>
     
-    <template v-else-if="result && yearMeaning">
+    <div v-else-if="!result || !yearMeaning" class="w-full h-full flex items-center justify-center px-6">
+      <div class="text-center max-w-md">
+        <div class="w-16 h-16 border-2 border-gold/30 border-t-gold rounded-full animate-spin mx-auto mb-4" />
+        <p class="font-display text-gold tracking-wider">数据加载中...</p>
+      </div>
+    </div>
+    
+    <template v-else>
       <div class="max-w-6xl mx-auto px-6 py-12">
         <div class="text-center mb-12">
           <div class="font-mono text-xs text-silver/60 tracking-wider mb-4">
