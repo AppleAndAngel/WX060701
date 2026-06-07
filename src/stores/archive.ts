@@ -1,7 +1,7 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import { getAllArchiveRecords, deleteArchiveRecord, clearAllArchiveRecords } from '@/utils/storage'
-import type { ArchiveRecord, DivinationResult, SynastryResult, YearlyResult } from '@/types'
+import type { ArchiveRecord, DivinationResult, SynastryResult, YearlyResult, CareerChoiceResult } from '@/types'
 
 export const useArchiveStore = defineStore('archive', () => {
   const records = ref<ArchiveRecord[]>([])
@@ -11,6 +11,7 @@ export const useArchiveStore = defineStore('archive', () => {
   const divinationCount = computed(() => records.value.filter(r => isDivinationRecord(r)).length)
   const synastryCount = computed(() => records.value.filter(r => isSynastryRecord(r)).length)
   const yearlyCount = computed(() => records.value.filter(r => isYearlyRecord(r)).length)
+  const careerChoiceCount = computed(() => records.value.filter(r => isCareerChoiceRecord(r)).length)
 
   const isSynastryRecord = (r: ArchiveRecord): r is SynastryResult => {
     return 'type' in r && r.type === 'synastry'
@@ -22,6 +23,10 @@ export const useArchiveStore = defineStore('archive', () => {
 
   const isYearlyRecord = (r: ArchiveRecord): r is YearlyResult => {
     return 'type' in r && r.type === 'yearly'
+  }
+
+  const isCareerChoiceRecord = (r: ArchiveRecord): r is CareerChoiceResult => {
+    return 'type' in r && r.type === 'career-choice'
   }
 
   const numberStats = computed(() => {
@@ -37,6 +42,13 @@ export const useArchiveStore = defineStore('archive', () => {
         ]
       } else if (isYearlyRecord(r)) {
         nums = [r.lifePathNumber, r.yearNumber]
+      } else if (isCareerChoiceRecord(r)) {
+        nums = [
+          r.interpretation.pathA.coreNumbers.lifePath, r.interpretation.pathA.coreNumbers.destiny,
+          r.interpretation.pathA.coreNumbers.soul, r.interpretation.pathA.coreNumbers.personality,
+          r.interpretation.pathB.coreNumbers.lifePath, r.interpretation.pathB.coreNumbers.destiny,
+          r.interpretation.pathB.coreNumbers.soul, r.interpretation.pathB.coreNumbers.personality
+        ]
       }
       nums.forEach(n => {
         stats[n] = (stats[n] || 0) + 1
@@ -99,12 +111,14 @@ export const useArchiveStore = defineStore('archive', () => {
     divinationCount,
     synastryCount,
     yearlyCount,
+    careerChoiceCount,
     numberStats,
     geometryStats,
     relationshipStats,
     isSynastryRecord,
     isDivinationRecord,
     isYearlyRecord,
+    isCareerChoiceRecord,
     loadRecords,
     removeRecord,
     clearAll,

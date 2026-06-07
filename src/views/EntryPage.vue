@@ -22,6 +22,10 @@ const goToYearly = () => {
   router.push('/yearly')
 }
 
+const goToCareerChoice = () => {
+  router.push('/career-choice')
+}
+
 const goToArchive = () => {
   router.push('/archive')
 }
@@ -117,6 +121,16 @@ onMounted(() => {
                 <span class="text-xl">☸</span>
                 年度流年
                 <span class="text-xl">☸</span>
+              </MysticButton>
+              
+              <MysticButton
+                size="lg"
+                variant="secondary"
+                @click="goToCareerChoice"
+              >
+                <span class="text-xl">⚖</span>
+                职业抉择
+                <span class="text-xl">⚖</span>
               </MysticButton>
               
               <MysticButton

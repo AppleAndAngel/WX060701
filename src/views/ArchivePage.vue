@@ -3,14 +3,14 @@ import { ref, onMounted, computed, watch } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useArchiveStore } from '@/stores/archive'
 import MysticButton from '@/components/common/MysticButton.vue'
-import type { DivinationResult, SynastryResult, YearlyResult } from '@/types'
+import type { DivinationResult, SynastryResult, YearlyResult, CareerChoiceResult } from '@/types'
 
 const router = useRouter()
 const route = useRoute()
 const archiveStore = useArchiveStore()
 const isLoading = ref(true)
 const showConfirmClear = ref(false)
-const activeFilter = ref<'all' | 'divination' | 'synastry' | 'yearly'>('all')
+const activeFilter = ref<'all' | 'divination' | 'synastry' | 'yearly' | 'career-choice'>('all')
 
 const loadRecordsData = () => {
   isLoading.value = true
@@ -67,22 +67,31 @@ const filteredRecords = computed(() => {
   if (activeFilter.value === 'yearly') {
     return archiveStore.records.filter(r => archiveStore.isYearlyRecord(r))
   }
+  if (activeFilter.value === 'career-choice') {
+    return archiveStore.records.filter(r => archiveStore.isCareerChoiceRecord(r))
+  }
   return archiveStore.records
 })
 
-const isSynastryRecord = (record: DivinationResult | SynastryResult | YearlyResult): record is SynastryResult => {
+const isSynastryRecord = (record: DivinationResult | SynastryResult | YearlyResult | CareerChoiceResult): record is SynastryResult => {
   return archiveStore.isSynastryRecord(record)
 }
 
-const isYearlyRecord = (record: DivinationResult | SynastryResult | YearlyResult): record is YearlyResult => {
+const isYearlyRecord = (record: DivinationResult | SynastryResult | YearlyResult | CareerChoiceResult): record is YearlyResult => {
   return archiveStore.isYearlyRecord(record)
 }
 
-const viewResult = (record: DivinationResult | SynastryResult | YearlyResult) => {
+const isCareerChoiceRecord = (record: DivinationResult | SynastryResult | YearlyResult | CareerChoiceResult): record is CareerChoiceResult => {
+  return archiveStore.isCareerChoiceRecord(record)
+}
+
+const viewResult = (record: DivinationResult | SynastryResult | YearlyResult | CareerChoiceResult) => {
   if (isSynastryRecord(record)) {
     router.push(`/synastry/result/${record.id}`)
   } else if (isYearlyRecord(record)) {
     router.push(`/yearly/result/${record.id}`)
+  } else if (isCareerChoiceRecord(record)) {
+    router.push(`/career-choice/result/${record.id}`)
   } else {
     router.push(`/result/${record.id}`)
   }
@@ -230,6 +239,10 @@ const maxCount = computed(() => {
                 <span class="text-silver/70 text-sm">年度流年</span>
                 <span class="font-display text-xl text-cyan-400">{{ archiveStore.yearlyCount }}</span>
               </div>
+              <div class="flex justify-between items-center">
+                <span class="text-silver/70 text-sm">职业抉择</span>
+                <span class="font-display text-xl text-orange-400">{{ archiveStore.careerChoiceCount }}</span>
+              </div>
               <div v-if="archiveStore.getMostFrequentNumber() !== null" class="flex justify-between items-center">
                 <span class="text-silver/70 text-sm">高频数字</span>
                 <span class="font-display text-2xl text-purple">{{ archiveStore.getMostFrequentNumber() }}</span>
@@ -297,6 +310,16 @@ const maxCount = computed(() => {
               >
                 流年 ({{ archiveStore.yearlyCount }})
               </button>
+              <button
+                @click="activeFilter = 'career-choice'"
+                class="px-3 py-1 rounded-full text-xs font-mono transition-all duration-300"
+                :class="{
+                  'bg-orange-500/20 text-orange-400 border border-orange-500/30': activeFilter === 'career-choice',
+                  'bg-silver/10 text-silver/60 border border-silver/20 hover:border-orange-500/30': activeFilter !== 'career-choice'
+                }"
+              >
+                抉择 ({{ archiveStore.careerChoiceCount }})
+              </button>
             </div>
           </div>
           <button
@@ -319,7 +342,8 @@ const maxCount = computed(() => {
             class="group p-6 rounded-xl bg-glass hover:bg-glass/80 cursor-pointer transition-all duration-300 hover:border-gold/30 border border-transparent"
             :class="{
               'border-l-4 border-l-purple': isSynastryRecord(record),
-              'border-l-4 border-l-cyan-400': isYearlyRecord(record)
+              'border-l-4 border-l-cyan-400': isYearlyRecord(record),
+              'border-l-4 border-l-orange-400': isCareerChoiceRecord(record)
             }"
           >
             <div class="flex items-start justify-between gap-4">
@@ -339,6 +363,12 @@ const maxCount = computed(() => {
                     class="px-2 py-0.5 rounded bg-cyan-500/20 text-cyan-400 text-xs font-mono"
                   >
                     流年 · {{ (record as YearlyResult).input.targetYear }}
+                  </span>
+                  <span
+                    v-else-if="isCareerChoiceRecord(record)"
+                    class="px-2 py-0.5 rounded bg-orange-500/20 text-orange-400 text-xs font-mono"
+                  >
+                    抉择
                   </span>
                   <span v-else class="px-2 py-0.5 rounded bg-gold/20 text-gold text-xs font-mono">
                     占卜
@@ -372,6 +402,18 @@ const maxCount = computed(() => {
                       生命路径 {{ (record as YearlyResult).lifePathNumber }}
                     </span>
                   </template>
+                  <template v-else-if="isCareerChoiceRecord(record)">
+                    <span class="px-2 py-0.5 rounded bg-gold/10 text-gold/80 text-xs font-mono">
+                      {{ (record as CareerChoiceResult).input.name }}
+                    </span>
+                    <span class="px-2 py-0.5 rounded bg-gold/10 text-gold/80 text-xs font-mono">
+                      {{ (record as CareerChoiceResult).input.optionA.name }}
+                    </span>
+                    <span class="text-silver/50">vs</span>
+                    <span class="px-2 py-0.5 rounded bg-purple/10 text-purple/80 text-xs font-mono">
+                      {{ (record as CareerChoiceResult).input.optionB.name }}
+                    </span>
+                  </template>
                   <template v-else>
                     <span class="px-2 py-0.5 rounded bg-gold/10 text-gold/80 text-xs font-mono">
                       {{ record.input.name }}
@@ -395,6 +437,9 @@ const maxCount = computed(() => {
                   </template>
                   <template v-else-if="isYearlyRecord(record)">
                     {{ (record as YearlyResult).interpretation.overallDescription }}
+                  </template>
+                  <template v-else-if="isCareerChoiceRecord(record)">
+                    {{ (record as CareerChoiceResult).interpretation.overallDescription }}
                   </template>
                   <template v-else>
                     {{ record.interpretation.paragraphs[0] }}
@@ -446,6 +491,19 @@ const maxCount = computed(() => {
                       <span class="font-display text-sm text-cyan-400">
                         {{ (record as YearlyResult).interpretation.theme }}
                       </span>
+                    </div>
+                  </template>
+                  <template v-else-if="isCareerChoiceRecord(record)">
+                    <div class="flex items-center gap-2">
+                      <span class="text-xs text-silver/60 font-mono">{{ (record as CareerChoiceResult).input.optionA.name }}</span>
+                      <span class="w-6 h-6 rounded-full bg-gold/20 flex items-center justify-center text-xs font-display text-gold">
+                        {{ (record as CareerChoiceResult).interpretation.pathA.suitability }}
+                      </span>
+                      <span class="text-silver/40">vs</span>
+                      <span class="w-6 h-6 rounded-full bg-purple/20 flex items-center justify-center text-xs font-display text-purple">
+                        {{ (record as CareerChoiceResult).interpretation.pathB.suitability }}
+                      </span>
+                      <span class="text-xs text-silver/60 font-mono">{{ (record as CareerChoiceResult).input.optionB.name }}</span>
                     </div>
                   </template>
                   <template v-else>

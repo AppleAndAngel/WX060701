@@ -193,4 +193,69 @@ export interface YearlyResult {
   createdAt: number
 }
 
-export type ArchiveRecord = DivinationResult | SynastryResult | YearlyResult
+export interface CareerChoiceOption {
+  name: string
+  description: string
+}
+
+export interface CareerChoiceInput {
+  name: string
+  birthDate: string
+  optionA: CareerChoiceOption
+  optionB: CareerChoiceOption
+  timestamp: number
+}
+
+export interface PathAnalysis {
+  optionName: string
+  coreNumbers: CoreNumbers
+  advantages: string[]
+  costs: string[]
+  suitability: number
+  energyLevel: number
+  growthPotential: number
+  riskLevel: number
+  timeline: {
+    shortTerm: string
+    mediumTerm: string
+    longTerm: string
+  }
+  keyIndicators: {
+    name: string
+    value: number
+    description: string
+  }[]
+}
+
+export interface CareerChoiceComparison {
+  aspect: string
+  optionAScore: number
+  optionBScore: number
+  description: string
+  recommendation: string
+}
+
+export interface CareerChoiceInterpretation {
+  title: string
+  overallDescription: string
+  pathA: PathAnalysis
+  pathB: PathAnalysis
+  comparisons: CareerChoiceComparison[]
+  finalRecommendation: string
+  actionSteps: string[]
+  keywords: string[]
+  warning?: string
+}
+
+export interface CareerChoiceResult {
+  id: string
+  type: 'career-choice'
+  input: CareerChoiceInput
+  geometry: GeometryData
+  starMap: StarMap
+  interpretation: CareerChoiceInterpretation
+  calculationTrace: CalculationStep[]
+  createdAt: number
+}
+
+export type ArchiveRecord = DivinationResult | SynastryResult | YearlyResult | CareerChoiceResult

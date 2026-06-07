@@ -1,9 +1,10 @@
-import type { DivinationResult, SynastryResult, ArchiveRecord, YearlyResult } from '@/types'
+import type { DivinationResult, SynastryResult, ArchiveRecord, YearlyResult, CareerChoiceResult } from '@/types'
 import { simpleEncrypt, simpleDecrypt } from './hash'
 
 const STORAGE_KEY = 'divination_archive'
 const SYNASTRY_STORAGE_KEY = 'synastry_archive'
 const YEARLY_STORAGE_KEY = 'yearly_archive'
+const CAREER_CHOICE_STORAGE_KEY = 'career_choice_archive'
 const MAX_RECORDS = 50
 
 export const saveResult = (result: DivinationResult): void => {
@@ -114,26 +115,65 @@ export const clearAllYearlyRecords = (): void => {
   localStorage.removeItem(YEARLY_STORAGE_KEY)
 }
 
+export const saveCareerChoiceResult = (result: CareerChoiceResult): void => {
+  const records = getAllCareerChoiceRecords()
+  records.unshift(result)
+  if (records.length > MAX_RECORDS) {
+    records.splice(MAX_RECORDS)
+  }
+  const encrypted = simpleEncrypt(JSON.stringify(records))
+  localStorage.setItem(CAREER_CHOICE_STORAGE_KEY, encrypted)
+}
+
+export const getAllCareerChoiceRecords = (): CareerChoiceResult[] => {
+  const encrypted = localStorage.getItem(CAREER_CHOICE_STORAGE_KEY)
+  if (!encrypted) return []
+  try {
+    const decrypted = simpleDecrypt(encrypted)
+    return JSON.parse(decrypted) || []
+  } catch {
+    return []
+  }
+}
+
+export const getCareerChoiceRecordById = (id: string): CareerChoiceResult | null => {
+  const records = getAllCareerChoiceRecords()
+  return records.find(r => r.id === id) || null
+}
+
+export const deleteCareerChoiceRecord = (id: string): void => {
+  const records = getAllCareerChoiceRecords().filter(r => r.id !== id)
+  const encrypted = simpleEncrypt(JSON.stringify(records))
+  localStorage.setItem(CAREER_CHOICE_STORAGE_KEY, encrypted)
+}
+
+export const clearAllCareerChoiceRecords = (): void => {
+  localStorage.removeItem(CAREER_CHOICE_STORAGE_KEY)
+}
+
 export const getAllArchiveRecords = (): ArchiveRecord[] => {
   const divinationRecords = getAllRecords()
   const synastryRecords = getAllSynastryRecords()
   const yearlyRecords = getAllYearlyRecords()
-  const allRecords = [...divinationRecords, ...synastryRecords, ...yearlyRecords]
+  const careerChoiceRecords = getAllCareerChoiceRecords()
+  const allRecords = [...divinationRecords, ...synastryRecords, ...yearlyRecords, ...careerChoiceRecords]
   return allRecords.sort((a, b) => b.createdAt - a.createdAt)
 }
 
 export const getArchiveRecordById = (id: string): ArchiveRecord | null => {
-  return getRecordById(id) || getSynastryRecordById(id) || getYearlyRecordById(id) || null
+  return getRecordById(id) || getSynastryRecordById(id) || getYearlyRecordById(id) || getCareerChoiceRecordById(id) || null
 }
 
 export const deleteArchiveRecord = (id: string): void => {
   deleteRecord(id)
   deleteSynastryRecord(id)
   deleteYearlyRecord(id)
+  deleteCareerChoiceRecord(id)
 }
 
 export const clearAllArchiveRecords = (): void => {
   clearAllRecords()
   clearAllSynastryRecords()
   clearAllYearlyRecords()
+  clearAllCareerChoiceRecords()
 }
