@@ -3,14 +3,14 @@ import { ref, onMounted, computed, watch } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useArchiveStore } from '@/stores/archive'
 import MysticButton from '@/components/common/MysticButton.vue'
-import type { DivinationResult, SynastryResult, YearlyResult, CareerChoiceResult, LoveTimingResult } from '@/types'
+import type { DivinationResult, SynastryResult, YearlyResult, CareerChoiceResult, LoveTimingResult, DailyRitualResult } from '@/types'
 
 const router = useRouter()
 const route = useRoute()
 const archiveStore = useArchiveStore()
 const isLoading = ref(true)
 const showConfirmClear = ref(false)
-const activeFilter = ref<'all' | 'divination' | 'synastry' | 'yearly' | 'career-choice' | 'love-timing'>('all')
+const activeFilter = ref<'all' | 'divination' | 'synastry' | 'yearly' | 'career-choice' | 'love-timing' | 'daily-ritual'>('all')
 
 const loadRecordsData = () => {
   isLoading.value = true
@@ -73,26 +73,33 @@ const filteredRecords = computed(() => {
   if (activeFilter.value === 'love-timing') {
     return archiveStore.records.filter(r => archiveStore.isLoveTimingRecord(r))
   }
+  if (activeFilter.value === 'daily-ritual') {
+    return archiveStore.records.filter(r => archiveStore.isDailyRitualRecord(r))
+  }
   return archiveStore.records
 })
 
-const isSynastryRecord = (record: DivinationResult | SynastryResult | YearlyResult | CareerChoiceResult | LoveTimingResult): record is SynastryResult => {
+const isSynastryRecord = (record: DivinationResult | SynastryResult | YearlyResult | CareerChoiceResult | LoveTimingResult | DailyRitualResult): record is SynastryResult => {
   return archiveStore.isSynastryRecord(record)
 }
 
-const isYearlyRecord = (record: DivinationResult | SynastryResult | YearlyResult | CareerChoiceResult | LoveTimingResult): record is YearlyResult => {
+const isYearlyRecord = (record: DivinationResult | SynastryResult | YearlyResult | CareerChoiceResult | LoveTimingResult | DailyRitualResult): record is YearlyResult => {
   return archiveStore.isYearlyRecord(record)
 }
 
-const isCareerChoiceRecord = (record: DivinationResult | SynastryResult | YearlyResult | CareerChoiceResult | LoveTimingResult): record is CareerChoiceResult => {
+const isCareerChoiceRecord = (record: DivinationResult | SynastryResult | YearlyResult | CareerChoiceResult | LoveTimingResult | DailyRitualResult): record is CareerChoiceResult => {
   return archiveStore.isCareerChoiceRecord(record)
 }
 
-const isLoveTimingRecord = (record: DivinationResult | SynastryResult | YearlyResult | CareerChoiceResult | LoveTimingResult): record is LoveTimingResult => {
+const isLoveTimingRecord = (record: DivinationResult | SynastryResult | YearlyResult | CareerChoiceResult | LoveTimingResult | DailyRitualResult): record is LoveTimingResult => {
   return archiveStore.isLoveTimingRecord(record)
 }
 
-const viewResult = (record: DivinationResult | SynastryResult | YearlyResult | CareerChoiceResult | LoveTimingResult) => {
+const isDailyRitualRecord = (record: DivinationResult | SynastryResult | YearlyResult | CareerChoiceResult | LoveTimingResult | DailyRitualResult): record is DailyRitualResult => {
+  return archiveStore.isDailyRitualRecord(record)
+}
+
+const viewResult = (record: DivinationResult | SynastryResult | YearlyResult | CareerChoiceResult | LoveTimingResult | DailyRitualResult) => {
   if (isSynastryRecord(record)) {
     router.push(`/synastry/result/${record.id}`)
   } else if (isYearlyRecord(record)) {
@@ -101,10 +108,44 @@ const viewResult = (record: DivinationResult | SynastryResult | YearlyResult | C
     router.push(`/career-choice/result/${record.id}`)
   } else if (isLoveTimingRecord(record)) {
     router.push(`/love-timing/result/${record.id}`)
+  } else if (isDailyRitualRecord(record)) {
+    router.push(`/daily-ritual`)
   } else {
     router.push(`/result/${record.id}`)
   }
 }
+
+const weekDays = ['周一', '周二', '周三', '周四', '周五', '周六', '周日']
+
+const getEnergyColor = (level: number) => {
+  if (level >= 70) return 'from-emerald-400 to-green-500'
+  if (level >= 40) return 'from-gold to-yellow-500'
+  return 'from-orange-400 to-red-500'
+}
+
+const getTrendIcon = (trend: string) => {
+  if (trend === 'rising') return '↑'
+  if (trend === 'falling') return '↓'
+  return '→'
+}
+
+const getTrendText = (trend: string) => {
+  if (trend === 'rising') return '上升'
+  if (trend === 'falling') return '下降'
+  return '平稳'
+}
+
+const getTrendColor = (trend: string) => {
+  if (trend === 'rising') return 'text-emerald-400'
+  if (trend === 'falling') return 'text-orange-400'
+  return 'text-silver/70'
+}
+
+const maxEnergyValue = computed(() => {
+  if (!archiveStore.cycleData?.weekEnergy) return 100
+  const max = Math.max(...archiveStore.cycleData.weekEnergy, 100)
+  return Math.ceil(max / 10) * 10
+})
 
 const deleteRecord = (e: Event, id: string) => {
   e.stopPropagation()
@@ -174,6 +215,97 @@ const maxCount = computed(() => {
       </div>
       
       <template v-else>
+        <div v-if="archiveStore.totalRituals > 0" class="mb-12">
+          <h2 class="font-display text-2xl text-gold mb-6 tracking-wider">
+            ✧ 能量轨迹
+          </h2>
+          
+          <div class="grid md:grid-cols-4 gap-6 mb-8">
+            <div class="p-6 rounded-xl bg-glass text-center">
+              <div class="text-5xl mb-2">🔥</div>
+              <div class="font-display text-4xl text-gold mb-1">{{ archiveStore.consecutiveStreak }}</div>
+              <div class="text-sm text-silver/70 font-mono">连续签到天数</div>
+            </div>
+            <div class="p-6 rounded-xl bg-glass text-center">
+              <div class="text-5xl mb-2">✦</div>
+              <div class="font-display text-4xl text-purple mb-1">{{ archiveStore.totalRituals }}</div>
+              <div class="text-sm text-silver/70 font-mono">累计仪式次数</div>
+            </div>
+            <div class="p-6 rounded-xl bg-glass text-center">
+              <div class="text-5xl mb-2">⚡</div>
+              <div class="font-display text-4xl text-cyan-400 mb-1">{{ archiveStore.averageEnergy }}</div>
+              <div class="text-sm text-silver/70 font-mono">平均能量指数</div>
+            </div>
+            <div class="p-6 rounded-xl bg-glass text-center">
+              <div class="text-5xl mb-2" :class="getTrendColor(archiveStore.cycleData?.trend || 'stable')">
+                {{ getTrendIcon(archiveStore.cycleData?.trend || 'stable') }}
+              </div>
+              <div class="font-display text-4xl mb-1" :class="getTrendColor(archiveStore.cycleData?.trend || 'stable')">
+                {{ getTrendText(archiveStore.cycleData?.trend || 'stable') }}
+              </div>
+              <div class="text-sm text-silver/70 font-mono">近期能量趋势</div>
+            </div>
+          </div>
+
+          <div class="grid md:grid-cols-2 gap-6">
+            <div class="p-6 rounded-xl bg-glass">
+              <h3 class="font-display text-xl text-gold mb-6 tracking-wider">
+                本周能量波动
+              </h3>
+              <div class="flex items-end justify-between gap-2 h-40 mb-4">
+                <div
+                  v-for="(energy, idx) in archiveStore.cycleData?.weekEnergy || []"
+                  :key="idx"
+                  class="flex-1 flex flex-col items-center gap-2"
+                >
+                  <div class="w-full rounded-t-lg transition-all duration-700"
+                    :class="energy > 0 ? `bg-gradient-to-t ${getEnergyColor(energy)}` : 'bg-silver/10'"
+                    :style="{ height: energy > 0 ? `${(energy / maxEnergyValue) * 100}%` : '20%' }"
+                  />
+                  <span class="text-xs font-mono" :class="energy > 0 ? 'text-gold' : 'text-silver/40'">
+                    {{ weekDays[idx] }}
+                  </span>
+                  <span v-if="energy > 0" class="text-xs font-mono text-silver/60">
+                    {{ energy }}
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            <div class="p-6 rounded-xl bg-glass">
+              <h3 class="font-display text-xl text-gold mb-6 tracking-wider">
+                近期象征主题
+              </h3>
+              <div class="space-y-3">
+                <div
+                  v-for="theme in archiveStore.frequentThemes"
+                  :key="theme.theme"
+                  class="flex items-start gap-3"
+                >
+                  <div class="w-8 h-8 rounded-full bg-purple/20 flex items-center justify-center flex-shrink-0 mt-0.5">
+                    <span class="font-display text-sm text-purple">{{ theme.count }}</span>
+                  </div>
+                  <div class="flex-1">
+                    <div class="font-display text-silver/90">{{ theme.theme }}</div>
+                    <div class="flex flex-wrap gap-1 mt-1">
+                      <span
+                        v-for="kw in theme.keywords"
+                        :key="kw"
+                        class="px-2 py-0.5 rounded bg-silver/10 text-silver/60 text-xs font-mono"
+                      >
+                        {{ kw }}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div v-if="archiveStore.frequentThemes?.length === 0" class="text-center py-8">
+                <p class="text-silver/50">暂无主题数据</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
         <div class="grid md:grid-cols-3 gap-6 mb-12">
           <div class="p-6 rounded-xl bg-glass">
             <h3 class="font-display text-xl text-gold mb-6 tracking-wider">
@@ -255,6 +387,10 @@ const maxCount = computed(() => {
               <div class="flex justify-between items-center">
                 <span class="text-silver/70 text-sm">爱情时机</span>
                 <span class="font-display text-xl text-pink-400">{{ archiveStore.loveTimingCount }}</span>
+              </div>
+              <div class="flex justify-between items-center">
+                <span class="text-silver/70 text-sm">每日仪式</span>
+                <span class="font-display text-xl text-emerald-400">{{ archiveStore.dailyRitualCount }}</span>
               </div>
               <div v-if="archiveStore.getMostFrequentNumber() !== null" class="flex justify-between items-center">
                 <span class="text-silver/70 text-sm">高频数字</span>
@@ -343,6 +479,16 @@ const maxCount = computed(() => {
               >
                 时机 ({{ archiveStore.loveTimingCount }})
               </button>
+              <button
+                @click="activeFilter = 'daily-ritual'"
+                class="px-3 py-1 rounded-full text-xs font-mono transition-all duration-300"
+                :class="{
+                  'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30': activeFilter === 'daily-ritual',
+                  'bg-silver/10 text-silver/60 border border-silver/20 hover:border-emerald-500/30': activeFilter !== 'daily-ritual'
+                }"
+              >
+                日签 ({{ archiveStore.dailyRitualCount }})
+              </button>
             </div>
           </div>
           <button
@@ -367,7 +513,8 @@ const maxCount = computed(() => {
               'border-l-4 border-l-purple': isSynastryRecord(record),
               'border-l-4 border-l-cyan-400': isYearlyRecord(record),
               'border-l-4 border-l-orange-400': isCareerChoiceRecord(record),
-              'border-l-4 border-l-pink-400': isLoveTimingRecord(record)
+              'border-l-4 border-l-pink-400': isLoveTimingRecord(record),
+              'border-l-4 border-l-emerald-400': isDailyRitualRecord(record)
             }"
           >
             <div class="flex items-start justify-between gap-4">
@@ -399,6 +546,12 @@ const maxCount = computed(() => {
                     class="px-2 py-0.5 rounded bg-pink-500/20 text-pink-400 text-xs font-mono"
                   >
                     时机 · {{ (record as LoveTimingResult).input.scenario === 'progression' ? '关系推进' : (record as LoveTimingResult).input.scenario === 'reconciliation' ? '复合' : '表白' }}
+                  </span>
+                  <span
+                    v-else-if="isDailyRitualRecord(record)"
+                    class="px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-400 text-xs font-mono"
+                  >
+                    日签 · 数字 {{ (record as DailyRitualResult).dailyNumber }}
                   </span>
                   <span v-else class="px-2 py-0.5 rounded bg-gold/20 text-gold text-xs font-mono">
                     占卜
@@ -456,6 +609,17 @@ const maxCount = computed(() => {
                       {{ getGeometryName(record.geometry.type) }}
                     </span>
                   </template>
+                  <template v-else-if="isDailyRitualRecord(record)">
+                    <span class="px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-400/80 text-xs font-mono">
+                      {{ (record as DailyRitualResult).symbolTheme }}
+                    </span>
+                    <span class="px-2 py-0.5 rounded bg-gold/10 text-gold/80 text-xs font-mono">
+                      能量 {{ (record as DailyRitualResult).energyLevel }}
+                    </span>
+                    <span class="px-2 py-0.5 rounded bg-gold/10 text-gold/80 text-xs font-mono">
+                      {{ getGeometryName(record.geometry.type) }}
+                    </span>
+                  </template>
                   <template v-else>
                     <span class="px-2 py-0.5 rounded bg-gold/10 text-gold/80 text-xs font-mono">
                       {{ record.input.name }}
@@ -465,7 +629,7 @@ const maxCount = computed(() => {
                     </span>
                   </template>
                   <span
-                    v-for="kw in (isYearlyRecord(record) ? record.interpretation.coreKeywords : record.interpretation.keywords).slice(0, 3)"
+                    v-for="kw in (isDailyRitualRecord(record) ? (record as DailyRitualResult).symbolKeywords : (isYearlyRecord(record) ? record.interpretation.coreKeywords : record.interpretation.keywords)).slice(0, 3)"
                     :key="kw"
                     class="px-2 py-0.5 rounded bg-silver/10 text-silver/70 text-xs font-mono"
                   >
@@ -485,6 +649,9 @@ const maxCount = computed(() => {
                   </template>
                   <template v-else-if="isLoveTimingRecord(record)">
                     {{ (record as LoveTimingResult).interpretation.overallDescription }}
+                  </template>
+                  <template v-else-if="isDailyRitualRecord(record)">
+                    {{ (record as DailyRitualResult).interpretation.guidance }}
                   </template>
                   <template v-else>
                     {{ record.interpretation.paragraphs[0] }}
@@ -575,6 +742,25 @@ const maxCount = computed(() => {
                       <span class="text-xs text-silver/60 font-mono">时机指数</span>
                       <span class="font-display text-lg text-pink-400">
                         {{ (record as LoveTimingResult).interpretation.overallScore }}
+                      </span>
+                    </div>
+                  </template>
+                  <template v-else-if="isDailyRitualRecord(record)">
+                    <div class="flex items-center gap-2">
+                      <span class="text-xs text-silver/60 font-mono">心情</span>
+                      <span class="px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-400 text-xs font-mono">
+                        {{ (record as DailyRitualResult).input.mood }}
+                      </span>
+                      <span class="text-silver/40">·</span>
+                      <span class="text-xs text-silver/60 font-mono">日签数字</span>
+                      <span class="w-8 h-8 rounded-full bg-emerald-500/20 flex items-center justify-center text-sm font-display text-emerald-400">
+                        {{ (record as DailyRitualResult).dailyNumber }}
+                      </span>
+                    </div>
+                    <div class="ml-auto flex items-center gap-1">
+                      <span class="text-xs text-silver/60 font-mono">能量指数</span>
+                      <span class="font-display text-lg text-emerald-400">
+                        {{ (record as DailyRitualResult).energyLevel }}
                       </span>
                     </div>
                   </template>

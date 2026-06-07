@@ -30,6 +30,10 @@ const goToLoveTiming = () => {
   router.push('/love-timing')
 }
 
+const goToDailyRitual = () => {
+  router.push('/daily-ritual')
+}
+
 const goToArchive = () => {
   router.push('/archive')
 }
@@ -145,6 +149,16 @@ onMounted(() => {
                 <span class="text-xl">♥</span>
                 爱情时机
                 <span class="text-xl">♥</span>
+              </MysticButton>
+              
+              <MysticButton
+                size="lg"
+                variant="primary"
+                @click="goToDailyRitual"
+              >
+                <span class="text-xl">☀</span>
+                每日仪式
+                <span class="text-xl">☀</span>
               </MysticButton>
               
               <MysticButton

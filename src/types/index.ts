@@ -333,4 +333,39 @@ export interface LoveTimingResult {
   createdAt: number
 }
 
-export type ArchiveRecord = DivinationResult | SynastryResult | YearlyResult | CareerChoiceResult | LoveTimingResult
+export interface DailyRitualInput {
+  name: string
+  birthDate: string
+  mood: string
+  intention: string
+  selectedRune: number
+  timestamp: number
+}
+
+export interface DailyRitualResult {
+  id: string
+  type: 'daily-ritual'
+  input: DailyRitualInput
+  dailyNumber: number
+  energyLevel: number
+  symbolTheme: string
+  symbolKeywords: string[]
+  interpretation: {
+    title: string
+    paragraphs: string[]
+    keywords: string[]
+    guidance: string
+  }
+  geometry: GeometryData
+  createdAt: number
+  dateKey: string
+}
+
+export interface EnergyDataPoint {
+  date: string
+  energyLevel: number
+  dailyNumber: number
+  symbolTheme: string
+}
+
+export type ArchiveRecord = DivinationResult | SynastryResult | YearlyResult | CareerChoiceResult | LoveTimingResult | DailyRitualResult

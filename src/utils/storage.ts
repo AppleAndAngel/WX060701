@@ -1,4 +1,4 @@
-import type { DivinationResult, SynastryResult, ArchiveRecord, YearlyResult, CareerChoiceResult, LoveTimingResult } from '@/types'
+import type { DivinationResult, SynastryResult, ArchiveRecord, YearlyResult, CareerChoiceResult, LoveTimingResult, DailyRitualResult } from '@/types'
 import { simpleEncrypt, simpleDecrypt } from './hash'
 
 const STORAGE_KEY = 'divination_archive'
@@ -6,6 +6,7 @@ const SYNASTRY_STORAGE_KEY = 'synastry_archive'
 const YEARLY_STORAGE_KEY = 'yearly_archive'
 const CAREER_CHOICE_STORAGE_KEY = 'career_choice_archive'
 const LOVE_TIMING_STORAGE_KEY = 'love_timing_archive'
+const DAILY_RITUAL_STORAGE_KEY = 'daily_ritual_archive'
 const MAX_RECORDS = 50
 
 export const saveResult = (result: DivinationResult): void => {
@@ -188,18 +189,60 @@ export const clearAllLoveTimingRecords = (): void => {
   localStorage.removeItem(LOVE_TIMING_STORAGE_KEY)
 }
 
+export const saveDailyRitualResult = (result: DailyRitualResult): void => {
+  const records = getAllDailyRitualRecords()
+  records.unshift(result)
+  if (records.length > MAX_RECORDS) {
+    records.splice(MAX_RECORDS)
+  }
+  const encrypted = simpleEncrypt(JSON.stringify(records))
+  localStorage.setItem(DAILY_RITUAL_STORAGE_KEY, encrypted)
+}
+
+export const getAllDailyRitualRecords = (): DailyRitualResult[] => {
+  const encrypted = localStorage.getItem(DAILY_RITUAL_STORAGE_KEY)
+  if (!encrypted) return []
+  try {
+    const decrypted = simpleDecrypt(encrypted)
+    return JSON.parse(decrypted) || []
+  } catch {
+    return []
+  }
+}
+
+export const getDailyRitualRecordById = (id: string): DailyRitualResult | null => {
+  const records = getAllDailyRitualRecords()
+  return records.find(r => r.id === id) || null
+}
+
+export const getDailyRitualRecordByDate = (dateKey: string): DailyRitualResult | null => {
+  const records = getAllDailyRitualRecords()
+  return records.find(r => r.dateKey === dateKey) || null
+}
+
+export const deleteDailyRitualRecord = (id: string): void => {
+  const records = getAllDailyRitualRecords().filter(r => r.id !== id)
+  const encrypted = simpleEncrypt(JSON.stringify(records))
+  localStorage.setItem(DAILY_RITUAL_STORAGE_KEY, encrypted)
+}
+
+export const clearAllDailyRitualRecords = (): void => {
+  localStorage.removeItem(DAILY_RITUAL_STORAGE_KEY)
+}
+
 export const getAllArchiveRecords = (): ArchiveRecord[] => {
   const divinationRecords = getAllRecords()
   const synastryRecords = getAllSynastryRecords()
   const yearlyRecords = getAllYearlyRecords()
   const careerChoiceRecords = getAllCareerChoiceRecords()
   const loveTimingRecords = getAllLoveTimingRecords()
-  const allRecords = [...divinationRecords, ...synastryRecords, ...yearlyRecords, ...careerChoiceRecords, ...loveTimingRecords]
+  const dailyRitualRecords = getAllDailyRitualRecords()
+  const allRecords = [...divinationRecords, ...synastryRecords, ...yearlyRecords, ...careerChoiceRecords, ...loveTimingRecords, ...dailyRitualRecords]
   return allRecords.sort((a, b) => b.createdAt - a.createdAt)
 }
 
 export const getArchiveRecordById = (id: string): ArchiveRecord | null => {
-  return getRecordById(id) || getSynastryRecordById(id) || getYearlyRecordById(id) || getCareerChoiceRecordById(id) || getLoveTimingRecordById(id) || null
+  return getRecordById(id) || getSynastryRecordById(id) || getYearlyRecordById(id) || getCareerChoiceRecordById(id) || getLoveTimingRecordById(id) || getDailyRitualRecordById(id) || null
 }
 
 export const deleteArchiveRecord = (id: string): void => {
@@ -208,6 +251,7 @@ export const deleteArchiveRecord = (id: string): void => {
   deleteYearlyRecord(id)
   deleteCareerChoiceRecord(id)
   deleteLoveTimingRecord(id)
+  deleteDailyRitualRecord(id)
 }
 
 export const clearAllArchiveRecords = (): void => {
@@ -216,4 +260,5 @@ export const clearAllArchiveRecords = (): void => {
   clearAllYearlyRecords()
   clearAllCareerChoiceRecords()
   clearAllLoveTimingRecords()
+  clearAllDailyRitualRecords()
 }

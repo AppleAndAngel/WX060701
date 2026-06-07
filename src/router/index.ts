@@ -11,6 +11,7 @@ import CareerChoiceInputPage from '@/views/CareerChoiceInputPage.vue'
 import CareerChoiceResultPage from '@/views/CareerChoiceResultPage.vue'
 import LoveTimingInputPage from '@/views/LoveTimingInputPage.vue'
 import LoveTimingResultPage from '@/views/LoveTimingResultPage.vue'
+import DailyRitualPage from '@/views/DailyRitualPage.vue'
 
 const router = createRouter({
   history: createWebHistory(),
@@ -79,6 +80,11 @@ const router = createRouter({
       name: 'love-timing-result',
       component: LoveTimingResultPage,
       props: true
+    },
+    {
+      path: '/daily-ritual',
+      name: 'daily-ritual',
+      component: DailyRitualPage
     }
   ]
 })

@@ -1,11 +1,16 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
-import { getAllArchiveRecords, deleteArchiveRecord, clearAllArchiveRecords } from '@/utils/storage'
-import type { ArchiveRecord, DivinationResult, SynastryResult, YearlyResult, CareerChoiceResult, LoveTimingResult } from '@/types'
+import { getAllArchiveRecords, deleteArchiveRecord, clearAllArchiveRecords, getAllDailyRitualRecords } from '@/utils/storage'
+import { calculateConsecutiveStreak, calculateCycleData, getMostFrequentThemes } from '@/algorithms/dailyRitual'
+import type { ArchiveRecord, DivinationResult, SynastryResult, YearlyResult, CareerChoiceResult, LoveTimingResult, DailyRitualResult } from '@/types'
 
 export const useArchiveStore = defineStore('archive', () => {
   const records = ref<ArchiveRecord[]>([])
   const isLoading = ref(false)
+
+  const dailyRitualRecords = computed<DailyRitualResult[]>(() => {
+    return getAllDailyRitualRecords()
+  })
 
   const recordCount = computed(() => records.value.length)
   const divinationCount = computed(() => records.value.filter(r => isDivinationRecord(r)).length)
@@ -13,6 +18,7 @@ export const useArchiveStore = defineStore('archive', () => {
   const yearlyCount = computed(() => records.value.filter(r => isYearlyRecord(r)).length)
   const careerChoiceCount = computed(() => records.value.filter(r => isCareerChoiceRecord(r)).length)
   const loveTimingCount = computed(() => records.value.filter(r => isLoveTimingRecord(r)).length)
+  const dailyRitualCount = computed(() => records.value.filter(r => isDailyRitualRecord(r)).length)
 
   const isSynastryRecord = (r: ArchiveRecord): r is SynastryResult => {
     return 'type' in r && r.type === 'synastry'
@@ -33,6 +39,33 @@ export const useArchiveStore = defineStore('archive', () => {
   const isLoveTimingRecord = (r: ArchiveRecord): r is LoveTimingResult => {
     return 'type' in r && r.type === 'love-timing'
   }
+
+  const isDailyRitualRecord = (r: ArchiveRecord): r is DailyRitualResult => {
+    return 'type' in r && r.type === 'daily-ritual'
+  }
+
+  const consecutiveStreak = computed(() => {
+    const dates = dailyRitualRecords.value.map(r => r.dateKey)
+    return calculateConsecutiveStreak(dates)
+  })
+
+  const cycleData = computed(() => {
+    return calculateCycleData(dailyRitualRecords.value)
+  })
+
+  const frequentThemes = computed(() => {
+    return getMostFrequentThemes(dailyRitualRecords.value, 5)
+  })
+
+  const totalRituals = computed(() => {
+    return dailyRitualRecords.value.length
+  })
+
+  const averageEnergy = computed(() => {
+    if (dailyRitualRecords.value.length === 0) return 0
+    const sum = dailyRitualRecords.value.reduce((acc, r) => acc + r.energyLevel, 0)
+    return Math.round(sum / dailyRitualRecords.value.length)
+  })
 
   const numberStats = computed(() => {
     const stats: Record<number, number> = {}
@@ -59,6 +92,8 @@ export const useArchiveStore = defineStore('archive', () => {
           r.yourNumbers.lifePath, r.yourNumbers.destiny, r.yourNumbers.soul, r.yourNumbers.personality,
           r.theirNumbers.lifePath, r.theirNumbers.destiny, r.theirNumbers.soul, r.theirNumbers.personality
         ]
+      } else if (isDailyRitualRecord(r)) {
+        nums = [r.dailyNumber]
       }
       nums.forEach(n => {
         stats[n] = (stats[n] || 0) + 1
@@ -123,6 +158,7 @@ export const useArchiveStore = defineStore('archive', () => {
     yearlyCount,
     careerChoiceCount,
     loveTimingCount,
+    dailyRitualCount,
     numberStats,
     geometryStats,
     relationshipStats,
@@ -131,6 +167,13 @@ export const useArchiveStore = defineStore('archive', () => {
     isYearlyRecord,
     isCareerChoiceRecord,
     isLoveTimingRecord,
+    isDailyRitualRecord,
+    consecutiveStreak,
+    cycleData,
+    frequentThemes,
+    totalRituals,
+    averageEnergy,
+    dailyRitualRecords,
     loadRecords,
     removeRecord,
     clearAll,
