@@ -18,6 +18,10 @@ const goToSynastry = () => {
   router.push('/synastry')
 }
 
+const goToYearly = () => {
+  router.push('/yearly')
+}
+
 const goToArchive = () => {
   router.push('/archive')
 }
@@ -103,6 +107,16 @@ onMounted(() => {
                 <span class="text-xl">∞</span>
                 双人合盘
                 <span class="text-xl">∞</span>
+              </MysticButton>
+              
+              <MysticButton
+                size="lg"
+                variant="secondary"
+                @click="goToYearly"
+              >
+                <span class="text-xl">☸</span>
+                年度流年
+                <span class="text-xl">☸</span>
               </MysticButton>
               
               <MysticButton

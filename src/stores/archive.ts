@@ -1,22 +1,27 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import { getAllArchiveRecords, deleteArchiveRecord, clearAllArchiveRecords } from '@/utils/storage'
-import type { ArchiveRecord, DivinationResult, SynastryResult } from '@/types'
+import type { ArchiveRecord, DivinationResult, SynastryResult, YearlyResult } from '@/types'
 
 export const useArchiveStore = defineStore('archive', () => {
   const records = ref<ArchiveRecord[]>([])
   const isLoading = ref(false)
 
   const recordCount = computed(() => records.value.length)
-  const divinationCount = computed(() => records.value.filter(r => !('type' in r) || r.type !== 'synastry').length)
-  const synastryCount = computed(() => records.value.filter(r => 'type' in r && r.type === 'synastry').length)
+  const divinationCount = computed(() => records.value.filter(r => isDivinationRecord(r)).length)
+  const synastryCount = computed(() => records.value.filter(r => isSynastryRecord(r)).length)
+  const yearlyCount = computed(() => records.value.filter(r => isYearlyRecord(r)).length)
 
   const isSynastryRecord = (r: ArchiveRecord): r is SynastryResult => {
     return 'type' in r && r.type === 'synastry'
   }
 
   const isDivinationRecord = (r: ArchiveRecord): r is DivinationResult => {
-    return !('type' in r) || r.type !== 'synastry'
+    return !('type' in r)
+  }
+
+  const isYearlyRecord = (r: ArchiveRecord): r is YearlyResult => {
+    return 'type' in r && r.type === 'yearly'
   }
 
   const numberStats = computed(() => {
@@ -30,6 +35,8 @@ export const useArchiveStore = defineStore('archive', () => {
           r.personANumbers.lifePath, r.personANumbers.destiny, r.personANumbers.soul, r.personANumbers.personality,
           r.personBNumbers.lifePath, r.personBNumbers.destiny, r.personBNumbers.soul, r.personBNumbers.personality
         ]
+      } else if (isYearlyRecord(r)) {
+        nums = [r.lifePathNumber, r.yearNumber]
       }
       nums.forEach(n => {
         stats[n] = (stats[n] || 0) + 1
@@ -91,11 +98,13 @@ export const useArchiveStore = defineStore('archive', () => {
     recordCount,
     divinationCount,
     synastryCount,
+    yearlyCount,
     numberStats,
     geometryStats,
     relationshipStats,
     isSynastryRecord,
     isDivinationRecord,
+    isYearlyRecord,
     loadRecords,
     removeRecord,
     clearAll,

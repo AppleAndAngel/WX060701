@@ -3,13 +3,13 @@ import { ref, onMounted, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { useArchiveStore } from '@/stores/archive'
 import MysticButton from '@/components/common/MysticButton.vue'
-import type { DivinationResult, SynastryResult } from '@/types'
+import type { DivinationResult, SynastryResult, YearlyResult } from '@/types'
 
 const router = useRouter()
 const archiveStore = useArchiveStore()
 const isLoading = ref(true)
 const showConfirmClear = ref(false)
-const activeFilter = ref<'all' | 'divination' | 'synastry'>('all')
+const activeFilter = ref<'all' | 'divination' | 'synastry' | 'yearly'>('all')
 
 onMounted(() => {
   archiveStore.loadRecords()
@@ -49,16 +49,25 @@ const filteredRecords = computed(() => {
   if (activeFilter.value === 'synastry') {
     return archiveStore.records.filter(r => archiveStore.isSynastryRecord(r))
   }
+  if (activeFilter.value === 'yearly') {
+    return archiveStore.records.filter(r => archiveStore.isYearlyRecord(r))
+  }
   return archiveStore.records
 })
 
-const isSynastryRecord = (record: DivinationResult | SynastryResult): record is SynastryResult => {
+const isSynastryRecord = (record: DivinationResult | SynastryResult | YearlyResult): record is SynastryResult => {
   return archiveStore.isSynastryRecord(record)
 }
 
-const viewResult = (record: DivinationResult | SynastryResult) => {
+const isYearlyRecord = (record: DivinationResult | SynastryResult | YearlyResult): record is YearlyResult => {
+  return archiveStore.isYearlyRecord(record)
+}
+
+const viewResult = (record: DivinationResult | SynastryResult | YearlyResult) => {
   if (isSynastryRecord(record)) {
     router.push(`/synastry/result/${record.id}`)
+  } else if (isYearlyRecord(record)) {
+    router.push(`/yearly/result/${record.id}`)
   } else {
     router.push(`/result/${record.id}`)
   }
@@ -202,6 +211,10 @@ const maxCount = computed(() => {
                 <span class="text-silver/70 text-sm">双人合盘</span>
                 <span class="font-display text-xl text-purple">{{ archiveStore.synastryCount }}</span>
               </div>
+              <div class="flex justify-between items-center">
+                <span class="text-silver/70 text-sm">年度流年</span>
+                <span class="font-display text-xl text-cyan-400">{{ archiveStore.yearlyCount }}</span>
+              </div>
               <div v-if="archiveStore.getMostFrequentNumber() !== null" class="flex justify-between items-center">
                 <span class="text-silver/70 text-sm">高频数字</span>
                 <span class="font-display text-2xl text-purple">{{ archiveStore.getMostFrequentNumber() }}</span>
@@ -228,7 +241,7 @@ const maxCount = computed(() => {
             <h3 class="font-display text-xl text-gold tracking-wider">
               历史记录
             </h3>
-            <div class="flex gap-2">
+            <div class="flex gap-2 flex-wrap">
               <button
                 @click="activeFilter = 'all'"
                 class="px-3 py-1 rounded-full text-xs font-mono transition-all duration-300"
@@ -259,6 +272,16 @@ const maxCount = computed(() => {
               >
                 合盘 ({{ archiveStore.synastryCount }})
               </button>
+              <button
+                @click="activeFilter = 'yearly'"
+                class="px-3 py-1 rounded-full text-xs font-mono transition-all duration-300"
+                :class="{
+                  'bg-cyan-500/20 text-cyan-400 border border-cyan-500/30': activeFilter === 'yearly',
+                  'bg-silver/10 text-silver/60 border border-silver/20 hover:border-cyan-500/30': activeFilter !== 'yearly'
+                }"
+              >
+                流年 ({{ archiveStore.yearlyCount }})
+              </button>
             </div>
           </div>
           <button
@@ -279,7 +302,10 @@ const maxCount = computed(() => {
             :key="record.id"
             @click="viewResult(record)"
             class="group p-6 rounded-xl bg-glass hover:bg-glass/80 cursor-pointer transition-all duration-300 hover:border-gold/30 border border-transparent"
-            :class="{ 'border-l-4 border-l-purple': isSynastryRecord(record) }"
+            :class="{
+              'border-l-4 border-l-purple': isSynastryRecord(record),
+              'border-l-4 border-l-cyan-400': isYearlyRecord(record)
+            }"
           >
             <div class="flex items-start justify-between gap-4">
               <div class="flex-1">
@@ -292,6 +318,12 @@ const maxCount = computed(() => {
                     class="px-2 py-0.5 rounded bg-purple/20 text-purple text-xs font-mono"
                   >
                     合盘 · {{ (record as SynastryResult).input.relationshipType }}
+                  </span>
+                  <span
+                    v-else-if="isYearlyRecord(record)"
+                    class="px-2 py-0.5 rounded bg-cyan-500/20 text-cyan-400 text-xs font-mono"
+                  >
+                    流年 · {{ (record as YearlyResult).input.targetYear }}
                   </span>
                   <span v-else class="px-2 py-0.5 rounded bg-gold/20 text-gold text-xs font-mono">
                     占卜
@@ -314,6 +346,17 @@ const maxCount = computed(() => {
                       {{ getGeometryName(record.geometry.type) }}
                     </span>
                   </template>
+                  <template v-else-if="isYearlyRecord(record)">
+                    <span class="px-2 py-0.5 rounded bg-gold/10 text-gold/80 text-xs font-mono">
+                      {{ (record as YearlyResult).input.name }}
+                    </span>
+                    <span class="px-2 py-0.5 rounded bg-cyan-500/10 text-cyan-400/80 text-xs font-mono">
+                      流年数字 {{ (record as YearlyResult).yearNumber }}
+                    </span>
+                    <span class="px-2 py-0.5 rounded bg-gold/10 text-gold/80 text-xs font-mono">
+                      生命路径 {{ (record as YearlyResult).lifePathNumber }}
+                    </span>
+                  </template>
                   <template v-else>
                     <span class="px-2 py-0.5 rounded bg-gold/10 text-gold/80 text-xs font-mono">
                       {{ record.input.name }}
@@ -323,7 +366,7 @@ const maxCount = computed(() => {
                     </span>
                   </template>
                   <span
-                    v-for="kw in record.interpretation.keywords.slice(0, 3)"
+                    v-for="kw in (isYearlyRecord(record) ? record.interpretation.coreKeywords : record.interpretation.keywords).slice(0, 3)"
                     :key="kw"
                     class="px-2 py-0.5 rounded bg-silver/10 text-silver/70 text-xs font-mono"
                   >
@@ -334,6 +377,9 @@ const maxCount = computed(() => {
                 <p class="font-body text-silver/70 text-sm line-clamp-2">
                   <template v-if="isSynastryRecord(record)">
                     {{ (record as SynastryResult).interpretation.overallDescription }}
+                  </template>
+                  <template v-else-if="isYearlyRecord(record)">
+                    {{ (record as YearlyResult).interpretation.overallDescription }}
                   </template>
                   <template v-else>
                     {{ record.interpretation.paragraphs[0] }}
@@ -365,6 +411,25 @@ const maxCount = computed(() => {
                       <span class="text-xs text-silver/60 font-mono">匹配度</span>
                       <span class="font-display text-lg text-gold">
                         {{ (record as SynastryResult).interpretation.overallScore }}
+                      </span>
+                    </div>
+                  </template>
+                  <template v-else-if="isYearlyRecord(record)">
+                    <div class="flex items-center gap-2">
+                      <span class="text-xs text-silver/60 font-mono">生命路径</span>
+                      <span class="w-8 h-8 rounded-full bg-gold/20 flex items-center justify-center text-sm font-display text-gold">
+                        {{ (record as YearlyResult).lifePathNumber }}
+                      </span>
+                      <span class="text-silver/40">+</span>
+                      <span class="text-xs text-silver/60 font-mono">流年</span>
+                      <span class="w-8 h-8 rounded-full bg-cyan-500/20 flex items-center justify-center text-sm font-display text-cyan-400">
+                        {{ (record as YearlyResult).yearNumber }}
+                      </span>
+                    </div>
+                    <div class="ml-auto flex items-center gap-1">
+                      <span class="text-xs text-silver/60 font-mono">年度主题</span>
+                      <span class="font-display text-sm text-cyan-400">
+                        {{ (record as YearlyResult).interpretation.theme }}
                       </span>
                     </div>
                   </template>

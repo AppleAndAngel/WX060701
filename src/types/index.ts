@@ -141,4 +141,56 @@ export interface SynastryResult {
   createdAt: number
 }
 
-export type ArchiveRecord = DivinationResult | SynastryResult
+export interface YearlyDivinationInput {
+  name: string
+  birthDate: string
+  targetYear: number
+  timestamp: number
+}
+
+export interface MonthData {
+  month: number
+  name: string
+  monthNumber: number
+  theme: string
+  keywords: string[]
+  energy: string
+  opportunities: string[]
+  challenges: string[]
+  reminder: string
+}
+
+export interface PhaseData {
+  name: string
+  period: string
+  months: number[]
+  theme: string
+  focus: string[]
+  energy: string
+}
+
+export interface YearlyInterpretation {
+  title: string
+  yearNumber: number
+  theme: string
+  coreKeywords: string[]
+  overallDescription: string
+  phases: PhaseData[]
+  months: MonthData[]
+  keyReminders: string[]
+  auspiciousDays?: string[]
+}
+
+export interface YearlyResult {
+  id: string
+  type: 'yearly'
+  input: YearlyDivinationInput
+  lifePathNumber: number
+  yearNumber: number
+  interpretation: YearlyInterpretation
+  calculationTrace: CalculationStep[]
+  geometry: GeometryData
+  createdAt: number
+}
+
+export type ArchiveRecord = DivinationResult | SynastryResult | YearlyResult

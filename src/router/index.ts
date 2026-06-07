@@ -5,6 +5,8 @@ import ResultPage from '@/views/ResultPage.vue'
 import ArchivePage from '@/views/ArchivePage.vue'
 import SynastryInputPage from '@/views/SynastryInputPage.vue'
 import SynastryResultPage from '@/views/SynastryResultPage.vue'
+import YearlyInputPage from '@/views/YearlyInputPage.vue'
+import YearlyResultPage from '@/views/YearlyResultPage.vue'
 
 const router = createRouter({
   history: createWebHistory(),
@@ -39,6 +41,17 @@ const router = createRouter({
       path: '/synastry/result/:id',
       name: 'synastry-result',
       component: SynastryResultPage,
+      props: true
+    },
+    {
+      path: '/yearly',
+      name: 'yearly',
+      component: YearlyInputPage
+    },
+    {
+      path: '/yearly/result/:id',
+      name: 'yearly-result',
+      component: YearlyResultPage,
       props: true
     }
   ]

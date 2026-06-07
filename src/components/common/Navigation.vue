@@ -10,6 +10,7 @@ const navItems = [
     { path: '/', label: '入口', symbol: '☽' },
     { path: '/ritual', label: '占卜', symbol: '✧' },
     { path: '/synastry', label: '合盘', symbol: '∞' },
+    { path: '/yearly', label: '流年', symbol: '☸' },
     { path: '/archive', label: '档案', symbol: '☰' }
   ]
 
