@@ -34,6 +34,10 @@ const goToDailyRitual = () => {
   router.push('/daily-ritual')
 }
 
+const goToDreamInterpretation = () => {
+  router.push('/dream-interpretation')
+}
+
 const goToArchive = () => {
   router.push('/archive')
 }
@@ -159,6 +163,16 @@ onMounted(() => {
                 <span class="text-xl">☀</span>
                 每日仪式
                 <span class="text-xl">☀</span>
+              </MysticButton>
+              
+              <MysticButton
+                size="lg"
+                variant="secondary"
+                @click="goToDreamInterpretation"
+              >
+                <span class="text-xl">☽</span>
+                梦境解读
+                <span class="text-xl">☽</span>
               </MysticButton>
               
               <MysticButton

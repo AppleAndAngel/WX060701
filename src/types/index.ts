@@ -368,4 +368,65 @@ export interface EnergyDataPoint {
   symbolTheme: string
 }
 
-export type ArchiveRecord = DivinationResult | SynastryResult | YearlyResult | CareerChoiceResult | LoveTimingResult | DailyRitualResult
+export interface DreamInterpretationInput {
+  name: string
+  birthDate: string
+  dreamContent: string
+  dreamMood: string
+  timestamp: number
+}
+
+export interface DreamEmotion {
+  name: string
+  intensity: number
+  description: string
+  color: string
+}
+
+export interface DreamSymbol {
+  symbol: string
+  meaning: string
+  runeConnection: string
+  numerologyNumber: number
+}
+
+export interface PotentialWarning {
+  aspect: string
+  severity: 'low' | 'medium' | 'high'
+  description: string
+}
+
+export interface ActionSuggestion {
+  title: string
+  description: string
+  priority: 'immediate' | 'short-term' | 'long-term'
+  relatedNumber: number
+}
+
+export interface DreamInterpretation {
+  title: string
+  overallTheme: string
+  coreNumber: number
+  coreNumberMeaning: string
+  emotions: DreamEmotion[]
+  symbols: DreamSymbol[]
+  warnings: PotentialWarning[]
+  actionSuggestions: ActionSuggestion[]
+  subconsciousMessage: string
+  keywords: string[]
+  warning?: string
+}
+
+export interface DreamInterpretationResult {
+  id: string
+  type: 'dream-interpretation'
+  input: DreamInterpretationInput
+  coreNumbers: CoreNumbers
+  dreamNumber: number
+  interpretation: DreamInterpretation
+  calculationTrace: CalculationStep[]
+  geometry: GeometryData
+  createdAt: number
+}
+
+export type ArchiveRecord = DivinationResult | SynastryResult | YearlyResult | CareerChoiceResult | LoveTimingResult | DailyRitualResult | DreamInterpretationResult

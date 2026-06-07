@@ -1,4 +1,4 @@
-import type { DivinationResult, SynastryResult, ArchiveRecord, YearlyResult, CareerChoiceResult, LoveTimingResult, DailyRitualResult } from '@/types'
+import type { DivinationResult, SynastryResult, ArchiveRecord, YearlyResult, CareerChoiceResult, LoveTimingResult, DailyRitualResult, DreamInterpretationResult } from '@/types'
 import { simpleEncrypt, simpleDecrypt } from './hash'
 
 const STORAGE_KEY = 'divination_archive'
@@ -7,6 +7,7 @@ const YEARLY_STORAGE_KEY = 'yearly_archive'
 const CAREER_CHOICE_STORAGE_KEY = 'career_choice_archive'
 const LOVE_TIMING_STORAGE_KEY = 'love_timing_archive'
 const DAILY_RITUAL_STORAGE_KEY = 'daily_ritual_archive'
+const DREAM_INTERPRETATION_STORAGE_KEY = 'dream_interpretation_archive'
 const MAX_RECORDS = 50
 
 export const saveResult = (result: DivinationResult): void => {
@@ -230,6 +231,42 @@ export const clearAllDailyRitualRecords = (): void => {
   localStorage.removeItem(DAILY_RITUAL_STORAGE_KEY)
 }
 
+export const saveDreamInterpretationResult = (result: DreamInterpretationResult): void => {
+  const records = getAllDreamInterpretationRecords()
+  records.unshift(result)
+  if (records.length > MAX_RECORDS) {
+    records.splice(MAX_RECORDS)
+  }
+  const encrypted = simpleEncrypt(JSON.stringify(records))
+  localStorage.setItem(DREAM_INTERPRETATION_STORAGE_KEY, encrypted)
+}
+
+export const getAllDreamInterpretationRecords = (): DreamInterpretationResult[] => {
+  const encrypted = localStorage.getItem(DREAM_INTERPRETATION_STORAGE_KEY)
+  if (!encrypted) return []
+  try {
+    const decrypted = simpleDecrypt(encrypted)
+    return JSON.parse(decrypted) || []
+  } catch {
+    return []
+  }
+}
+
+export const getDreamInterpretationRecordById = (id: string): DreamInterpretationResult | null => {
+  const records = getAllDreamInterpretationRecords()
+  return records.find(r => r.id === id) || null
+}
+
+export const deleteDreamInterpretationRecord = (id: string): void => {
+  const records = getAllDreamInterpretationRecords().filter(r => r.id !== id)
+  const encrypted = simpleEncrypt(JSON.stringify(records))
+  localStorage.setItem(DREAM_INTERPRETATION_STORAGE_KEY, encrypted)
+}
+
+export const clearAllDreamInterpretationRecords = (): void => {
+  localStorage.removeItem(DREAM_INTERPRETATION_STORAGE_KEY)
+}
+
 export const getAllArchiveRecords = (): ArchiveRecord[] => {
   const divinationRecords = getAllRecords()
   const synastryRecords = getAllSynastryRecords()
@@ -237,12 +274,13 @@ export const getAllArchiveRecords = (): ArchiveRecord[] => {
   const careerChoiceRecords = getAllCareerChoiceRecords()
   const loveTimingRecords = getAllLoveTimingRecords()
   const dailyRitualRecords = getAllDailyRitualRecords()
-  const allRecords = [...divinationRecords, ...synastryRecords, ...yearlyRecords, ...careerChoiceRecords, ...loveTimingRecords, ...dailyRitualRecords]
+  const dreamInterpretationRecords = getAllDreamInterpretationRecords()
+  const allRecords = [...divinationRecords, ...synastryRecords, ...yearlyRecords, ...careerChoiceRecords, ...loveTimingRecords, ...dailyRitualRecords, ...dreamInterpretationRecords]
   return allRecords.sort((a, b) => b.createdAt - a.createdAt)
 }
 
 export const getArchiveRecordById = (id: string): ArchiveRecord | null => {
-  return getRecordById(id) || getSynastryRecordById(id) || getYearlyRecordById(id) || getCareerChoiceRecordById(id) || getLoveTimingRecordById(id) || getDailyRitualRecordById(id) || null
+  return getRecordById(id) || getSynastryRecordById(id) || getYearlyRecordById(id) || getCareerChoiceRecordById(id) || getLoveTimingRecordById(id) || getDailyRitualRecordById(id) || getDreamInterpretationRecordById(id) || null
 }
 
 export const deleteArchiveRecord = (id: string): void => {
@@ -252,6 +290,7 @@ export const deleteArchiveRecord = (id: string): void => {
   deleteCareerChoiceRecord(id)
   deleteLoveTimingRecord(id)
   deleteDailyRitualRecord(id)
+  deleteDreamInterpretationRecord(id)
 }
 
 export const clearAllArchiveRecords = (): void => {
@@ -261,4 +300,5 @@ export const clearAllArchiveRecords = (): void => {
   clearAllCareerChoiceRecords()
   clearAllLoveTimingRecords()
   clearAllDailyRitualRecords()
+  clearAllDreamInterpretationRecords()
 }

@@ -12,6 +12,8 @@ import CareerChoiceResultPage from '@/views/CareerChoiceResultPage.vue'
 import LoveTimingInputPage from '@/views/LoveTimingInputPage.vue'
 import LoveTimingResultPage from '@/views/LoveTimingResultPage.vue'
 import DailyRitualPage from '@/views/DailyRitualPage.vue'
+import DreamInterpretationInputPage from '@/views/DreamInterpretationInputPage.vue'
+import DreamInterpretationResultPage from '@/views/DreamInterpretationResultPage.vue'
 
 const router = createRouter({
   history: createWebHistory(),
@@ -85,6 +87,17 @@ const router = createRouter({
       path: '/daily-ritual',
       name: 'daily-ritual',
       component: DailyRitualPage
+    },
+    {
+      path: '/dream-interpretation',
+      name: 'dream-interpretation',
+      component: DreamInterpretationInputPage
+    },
+    {
+      path: '/dream-interpretation/result/:id',
+      name: 'dream-interpretation-result',
+      component: DreamInterpretationResultPage,
+      props: true
     }
   ]
 })

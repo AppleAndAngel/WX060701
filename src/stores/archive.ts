@@ -1,8 +1,8 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
-import { getAllArchiveRecords, deleteArchiveRecord, clearAllArchiveRecords, getAllDailyRitualRecords } from '@/utils/storage'
+import { getAllArchiveRecords, deleteArchiveRecord, clearAllArchiveRecords, getAllDailyRitualRecords, getAllDreamInterpretationRecords } from '@/utils/storage'
 import { calculateConsecutiveStreak, calculateCycleData, getMostFrequentThemes } from '@/algorithms/dailyRitual'
-import type { ArchiveRecord, DivinationResult, SynastryResult, YearlyResult, CareerChoiceResult, LoveTimingResult, DailyRitualResult } from '@/types'
+import type { ArchiveRecord, DivinationResult, SynastryResult, YearlyResult, CareerChoiceResult, LoveTimingResult, DailyRitualResult, DreamInterpretationResult } from '@/types'
 
 export const useArchiveStore = defineStore('archive', () => {
   const records = ref<ArchiveRecord[]>([])
@@ -19,6 +19,7 @@ export const useArchiveStore = defineStore('archive', () => {
   const careerChoiceCount = computed(() => records.value.filter(r => isCareerChoiceRecord(r)).length)
   const loveTimingCount = computed(() => records.value.filter(r => isLoveTimingRecord(r)).length)
   const dailyRitualCount = computed(() => records.value.filter(r => isDailyRitualRecord(r)).length)
+  const dreamInterpretationCount = computed(() => records.value.filter(r => isDreamInterpretationRecord(r)).length)
 
   const isSynastryRecord = (r: ArchiveRecord): r is SynastryResult => {
     return 'type' in r && r.type === 'synastry'
@@ -42,6 +43,10 @@ export const useArchiveStore = defineStore('archive', () => {
 
   const isDailyRitualRecord = (r: ArchiveRecord): r is DailyRitualResult => {
     return 'type' in r && r.type === 'daily-ritual'
+  }
+
+  const isDreamInterpretationRecord = (r: ArchiveRecord): r is DreamInterpretationResult => {
+    return 'type' in r && r.type === 'dream-interpretation'
   }
 
   const consecutiveStreak = computed(() => {
@@ -94,6 +99,8 @@ export const useArchiveStore = defineStore('archive', () => {
         ]
       } else if (isDailyRitualRecord(r)) {
         nums = [r.dailyNumber]
+      } else if (isDreamInterpretationRecord(r)) {
+        nums = [r.coreNumbers.lifePath, r.coreNumbers.destiny, r.coreNumbers.soul, r.coreNumbers.personality, r.dreamNumber]
       }
       nums.forEach(n => {
         stats[n] = (stats[n] || 0) + 1
@@ -159,6 +166,7 @@ export const useArchiveStore = defineStore('archive', () => {
     careerChoiceCount,
     loveTimingCount,
     dailyRitualCount,
+    dreamInterpretationCount,
     numberStats,
     geometryStats,
     relationshipStats,
@@ -168,6 +176,7 @@ export const useArchiveStore = defineStore('archive', () => {
     isCareerChoiceRecord,
     isLoveTimingRecord,
     isDailyRitualRecord,
+    isDreamInterpretationRecord,
     consecutiveStreak,
     cycleData,
     frequentThemes,

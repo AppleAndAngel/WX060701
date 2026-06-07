@@ -3,14 +3,14 @@ import { ref, onMounted, computed, watch } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useArchiveStore } from '@/stores/archive'
 import MysticButton from '@/components/common/MysticButton.vue'
-import type { DivinationResult, SynastryResult, YearlyResult, CareerChoiceResult, LoveTimingResult, DailyRitualResult } from '@/types'
+import type { DivinationResult, SynastryResult, YearlyResult, CareerChoiceResult, LoveTimingResult, DailyRitualResult, DreamInterpretationResult } from '@/types'
 
 const router = useRouter()
 const route = useRoute()
 const archiveStore = useArchiveStore()
 const isLoading = ref(true)
 const showConfirmClear = ref(false)
-const activeFilter = ref<'all' | 'divination' | 'synastry' | 'yearly' | 'career-choice' | 'love-timing' | 'daily-ritual'>('all')
+const activeFilter = ref<'all' | 'divination' | 'synastry' | 'yearly' | 'career-choice' | 'love-timing' | 'daily-ritual' | 'dream-interpretation'>('all')
 
 const loadRecordsData = () => {
   isLoading.value = true
@@ -76,30 +76,39 @@ const filteredRecords = computed(() => {
   if (activeFilter.value === 'daily-ritual') {
     return archiveStore.records.filter(r => archiveStore.isDailyRitualRecord(r))
   }
+  if (activeFilter.value === 'dream-interpretation') {
+    return archiveStore.records.filter(r => archiveStore.isDreamInterpretationRecord(r))
+  }
   return archiveStore.records
 })
 
-const isSynastryRecord = (record: DivinationResult | SynastryResult | YearlyResult | CareerChoiceResult | LoveTimingResult | DailyRitualResult): record is SynastryResult => {
+type ArchiveRecord = DivinationResult | SynastryResult | YearlyResult | CareerChoiceResult | LoveTimingResult | DailyRitualResult | DreamInterpretationResult
+
+const isSynastryRecord = (record: ArchiveRecord): record is SynastryResult => {
   return archiveStore.isSynastryRecord(record)
 }
 
-const isYearlyRecord = (record: DivinationResult | SynastryResult | YearlyResult | CareerChoiceResult | LoveTimingResult | DailyRitualResult): record is YearlyResult => {
+const isYearlyRecord = (record: ArchiveRecord): record is YearlyResult => {
   return archiveStore.isYearlyRecord(record)
 }
 
-const isCareerChoiceRecord = (record: DivinationResult | SynastryResult | YearlyResult | CareerChoiceResult | LoveTimingResult | DailyRitualResult): record is CareerChoiceResult => {
+const isCareerChoiceRecord = (record: ArchiveRecord): record is CareerChoiceResult => {
   return archiveStore.isCareerChoiceRecord(record)
 }
 
-const isLoveTimingRecord = (record: DivinationResult | SynastryResult | YearlyResult | CareerChoiceResult | LoveTimingResult | DailyRitualResult): record is LoveTimingResult => {
+const isLoveTimingRecord = (record: ArchiveRecord): record is LoveTimingResult => {
   return archiveStore.isLoveTimingRecord(record)
 }
 
-const isDailyRitualRecord = (record: DivinationResult | SynastryResult | YearlyResult | CareerChoiceResult | LoveTimingResult | DailyRitualResult): record is DailyRitualResult => {
+const isDailyRitualRecord = (record: ArchiveRecord): record is DailyRitualResult => {
   return archiveStore.isDailyRitualRecord(record)
 }
 
-const viewResult = (record: DivinationResult | SynastryResult | YearlyResult | CareerChoiceResult | LoveTimingResult | DailyRitualResult) => {
+const isDreamInterpretationRecord = (record: ArchiveRecord): record is DreamInterpretationResult => {
+  return archiveStore.isDreamInterpretationRecord(record)
+}
+
+const viewResult = (record: ArchiveRecord) => {
   if (isSynastryRecord(record)) {
     router.push(`/synastry/result/${record.id}`)
   } else if (isYearlyRecord(record)) {
@@ -110,6 +119,8 @@ const viewResult = (record: DivinationResult | SynastryResult | YearlyResult | C
     router.push(`/love-timing/result/${record.id}`)
   } else if (isDailyRitualRecord(record)) {
     router.push(`/daily-ritual`)
+  } else if (isDreamInterpretationRecord(record)) {
+    router.push(`/dream-interpretation/result/${record.id}`)
   } else {
     router.push(`/result/${record.id}`)
   }
@@ -392,6 +403,10 @@ const maxCount = computed(() => {
                 <span class="text-silver/70 text-sm">每日仪式</span>
                 <span class="font-display text-xl text-emerald-400">{{ archiveStore.dailyRitualCount }}</span>
               </div>
+              <div class="flex justify-between items-center">
+                <span class="text-silver/70 text-sm">梦境解读</span>
+                <span class="font-display text-xl text-indigo-400">{{ archiveStore.dreamInterpretationCount }}</span>
+              </div>
               <div v-if="archiveStore.getMostFrequentNumber() !== null" class="flex justify-between items-center">
                 <span class="text-silver/70 text-sm">高频数字</span>
                 <span class="font-display text-2xl text-purple">{{ archiveStore.getMostFrequentNumber() }}</span>
@@ -489,6 +504,16 @@ const maxCount = computed(() => {
               >
                 日签 ({{ archiveStore.dailyRitualCount }})
               </button>
+              <button
+                @click="activeFilter = 'dream-interpretation'"
+                class="px-3 py-1 rounded-full text-xs font-mono transition-all duration-300"
+                :class="{
+                  'bg-indigo-500/20 text-indigo-400 border border-indigo-500/30': activeFilter === 'dream-interpretation',
+                  'bg-silver/10 text-silver/60 border border-silver/20 hover:border-indigo-500/30': activeFilter !== 'dream-interpretation'
+                }"
+              >
+                梦境 ({{ archiveStore.dreamInterpretationCount }})
+              </button>
             </div>
           </div>
           <button
@@ -514,7 +539,8 @@ const maxCount = computed(() => {
               'border-l-4 border-l-cyan-400': isYearlyRecord(record),
               'border-l-4 border-l-orange-400': isCareerChoiceRecord(record),
               'border-l-4 border-l-pink-400': isLoveTimingRecord(record),
-              'border-l-4 border-l-emerald-400': isDailyRitualRecord(record)
+              'border-l-4 border-l-emerald-400': isDailyRitualRecord(record),
+              'border-l-4 border-l-indigo-400': isDreamInterpretationRecord(record)
             }"
           >
             <div class="flex items-start justify-between gap-4">
@@ -552,6 +578,12 @@ const maxCount = computed(() => {
                     class="px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-400 text-xs font-mono"
                   >
                     日签 · 数字 {{ (record as DailyRitualResult).dailyNumber }}
+                  </span>
+                  <span
+                    v-else-if="isDreamInterpretationRecord(record)"
+                    class="px-2 py-0.5 rounded bg-indigo-500/20 text-indigo-400 text-xs font-mono"
+                  >
+                    梦境 · 数字 {{ (record as DreamInterpretationResult).dreamNumber }}
                   </span>
                   <span v-else class="px-2 py-0.5 rounded bg-gold/20 text-gold text-xs font-mono">
                     占卜
@@ -620,6 +652,17 @@ const maxCount = computed(() => {
                       {{ getGeometryName(record.geometry.type) }}
                     </span>
                   </template>
+                  <template v-else-if="isDreamInterpretationRecord(record)">
+                    <span class="px-2 py-0.5 rounded bg-gold/10 text-gold/80 text-xs font-mono">
+                      {{ (record as DreamInterpretationResult).input.name }}
+                    </span>
+                    <span class="px-2 py-0.5 rounded bg-indigo-500/10 text-indigo-400/80 text-xs font-mono">
+                      梦境数字 {{ (record as DreamInterpretationResult).dreamNumber }}
+                    </span>
+                    <span class="px-2 py-0.5 rounded bg-gold/10 text-gold/80 text-xs font-mono">
+                      {{ getGeometryName(record.geometry.type) }}
+                    </span>
+                  </template>
                   <template v-else>
                     <span class="px-2 py-0.5 rounded bg-gold/10 text-gold/80 text-xs font-mono">
                       {{ record.input.name }}
@@ -629,7 +672,13 @@ const maxCount = computed(() => {
                     </span>
                   </template>
                   <span
-                    v-for="kw in (isDailyRitualRecord(record) ? (record as DailyRitualResult).symbolKeywords : (isYearlyRecord(record) ? record.interpretation.coreKeywords : record.interpretation.keywords)).slice(0, 3)"
+                    v-for="kw in (
+                      isDailyRitualRecord(record) 
+                        ? (record as DailyRitualResult).symbolKeywords 
+                        : isYearlyRecord(record) 
+                          ? record.interpretation.coreKeywords 
+                          : record.interpretation.keywords
+                    ).slice(0, 3)"
                     :key="kw"
                     class="px-2 py-0.5 rounded bg-silver/10 text-silver/70 text-xs font-mono"
                   >
@@ -652,6 +701,9 @@ const maxCount = computed(() => {
                   </template>
                   <template v-else-if="isDailyRitualRecord(record)">
                     {{ (record as DailyRitualResult).interpretation.guidance }}
+                  </template>
+                  <template v-else-if="isDreamInterpretationRecord(record)">
+                    {{ (record as DreamInterpretationResult).interpretation.overallTheme }}
                   </template>
                   <template v-else>
                     {{ record.interpretation.paragraphs[0] }}
@@ -761,6 +813,25 @@ const maxCount = computed(() => {
                       <span class="text-xs text-silver/60 font-mono">能量指数</span>
                       <span class="font-display text-lg text-emerald-400">
                         {{ (record as DailyRitualResult).energyLevel }}
+                      </span>
+                    </div>
+                  </template>
+                  <template v-else-if="isDreamInterpretationRecord(record)">
+                    <div class="flex items-center gap-2">
+                      <span class="text-xs text-silver/60 font-mono">梦境情绪</span>
+                      <span class="px-2 py-0.5 rounded bg-indigo-500/10 text-indigo-400 text-xs font-mono">
+                        {{ (record as DreamInterpretationResult).input.dreamMood }}
+                      </span>
+                      <span class="text-silver/40">·</span>
+                      <span class="text-xs text-silver/60 font-mono">梦境数字</span>
+                      <span class="w-8 h-8 rounded-full bg-indigo-500/20 flex items-center justify-center text-sm font-display text-indigo-400">
+                        {{ (record as DreamInterpretationResult).dreamNumber }}
+                      </span>
+                    </div>
+                    <div class="ml-auto flex items-center gap-1">
+                      <span class="text-xs text-silver/60 font-mono">核心数字</span>
+                      <span class="font-display text-lg text-indigo-400">
+                        {{ (record as DreamInterpretationResult).interpretation.coreNumber }}
                       </span>
                     </div>
                   </template>
