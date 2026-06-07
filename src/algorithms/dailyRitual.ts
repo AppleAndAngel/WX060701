@@ -1,7 +1,8 @@
 import { generateId, hashString, reduceNumber, clamp } from '@/utils/math'
 import { calculateLifePath } from './numerology'
 import { generatePolygonVertices, generateStarVertices } from './geometry'
-import type { DailyRitualInput, DailyRitualResult, GeometryData } from '@/types'
+import { getCategoryInterpretation, getCategoryTitle } from './questionCategory'
+import type { DailyRitualInput, DailyRitualResult, GeometryData, QuestionCategory } from '@/types'
 
 const symbolThemes = [
   { name: '晨曦启明', keywords: ['新开始', '希望', '突破'], element: 'fire' },
@@ -125,51 +126,43 @@ const generateDailyInterpretation = (
   energyLevel: number,
   symbolTheme: { name: string; keywords: string[]; element: string },
   mood: string,
-  intention: string
+  intention: string,
+  questionCategory: QuestionCategory | null
 ): {
   title: string
   paragraphs: string[]
   keywords: string[]
   guidance: string
 } => {
-  const numberMeanings: Record<number, string> = {
-    1: '今日是独立与开创的日子，你拥有独特的领导力和创新能量。',
-    2: '今日是合作与平衡的日子，敏感和同理心是你最强大的工具。',
-    3: '今日是创造与表达的日子，你的思维活跃，灵感如泉涌。',
-    4: '今日是稳定与建设的日子，脚踏实地的努力将带来丰厚回报。',
-    5: '今日是自由与变化的日子，新的机会和冒险正在等待你。',
-    6: '今日是关爱与责任的日子，家庭和人际关系将成为焦点。',
-    7: '今日是内省与智慧的日子，深度思考将带来深刻洞察。',
-    8: '今日是力量与富足的日子，你的个人影响力将达到高峰。',
-    9: '今日是完成与博爱之日，旧的循环结束，新的可能即将开启。',
-    11: '今日是直觉与启示的日子，相信你的内在指引，灵感将照亮前路。',
-    22: '今日是构建与显化的大师日，你的愿景有能力成为现实。',
-    33: '今日是大爱与奉献的日子，你的行动将影响许多人。'
-  }
-  
-  const energyDescriptions: Record<string, string> = {
-    high: '今天你的能量充沛，是采取行动的好日子。',
-    medium: '今天你的能量平稳，适合深思熟虑和稳步推进。',
-    low: '今天你的能量较低，适合休息、内省和自我照顾。'
-  }
+  const categoryInterp = getCategoryInterpretation(questionCategory)
+  const numberMeanings = categoryInterp.numberMeanings
+  const energyDescriptions = categoryInterp.energyDescriptions
+  const guidanceThemes = categoryInterp.guidanceThemes
   
   const baseMeaning = numberMeanings[dailyNumber] || numberMeanings[1]
   const energyLevelDesc = energyLevel >= 70 ? 'high' : energyLevel >= 40 ? 'medium' : 'low'
   const energyDesc = energyDescriptions[energyLevelDesc]
   
+  const categoryLabel = questionCategory === 'love' ? '感情' : 
+                       questionCategory === 'career' ? '事业' : 
+                       questionCategory === 'wealth' ? '财富' : 
+                       questionCategory === 'self-growth' ? '成长' : '今日'
+  
   const paragraphs: string[] = [
-    `今日数字：${dailyNumber}。${baseMeaning}`,
+    `${categoryLabel}数字：${dailyNumber}。${baseMeaning}`,
     `能量状态：${energyLevel}/100。${energyDesc}`,
-    `今日象征：${symbolTheme.name}。${symbolTheme.keywords.join(' · ')}。`,
+    `${categoryLabel}象征：${symbolTheme.name}。${symbolTheme.keywords.join(' · ')}。`,
     `当前心情「${mood}」与意图「${intention || '无'}」正在与宇宙能量产生共鸣。`
   ]
   
+  const elementDescription = symbolTheme.element === 'fire' ? '火焰般的热情' : 
+                              symbolTheme.element === 'water' ? '水般的流动' : 
+                              symbolTheme.element === 'earth' ? '大地般的稳固' : '风般的自由'
+  
   const guidanceMessages = [
-    `建议你今天专注于${symbolTheme.keywords[0]}，让这份能量引导你的行动。`,
-    `深呼吸，感受${symbolTheme.element === 'fire' ? '火焰般的热情' : symbolTheme.element === 'water' ? '水般的流动' : symbolTheme.element === 'earth' ? '大地般的稳固' : '风般的自由'}在你体内流动。`,
-    `记住，每一个清晨都是重新开始的机会，今天的选择将塑造你的未来。`,
-    `保持正念，观察生活中的同步性，它们可能是宇宙给你的讯息。`,
-    `善待自己，今日的${symbolTheme.name}能量将支持你的成长。`
+    ...guidanceThemes,
+    `深呼吸，感受${elementDescription}在你体内流动。`,
+    `保持正念，观察生活中的同步性，它们可能是宇宙给你的讯息。`
   ]
   
   const guidanceIndex = (dailyNumber + energyLevel) % guidanceMessages.length
@@ -182,8 +175,10 @@ const generateDailyInterpretation = (
     energyLevel >= 70 ? '高能量' : energyLevel >= 40 ? '中能量' : '低能量'
   ]
   
+  const title = getCategoryTitle(questionCategory, symbolTheme.name, dailyNumber)
+  
   return {
-    title: `${symbolTheme.name} · 日签 ${dailyNumber}`,
+    title,
     paragraphs,
     keywords,
     guidance
@@ -191,7 +186,7 @@ const generateDailyInterpretation = (
 }
 
 export const performDailyRitual = (input: DailyRitualInput): DailyRitualResult => {
-  const { name, birthDate, mood, intention, selectedRune, timestamp } = input
+  const { name, birthDate, questionCategory, mood, intention, selectedRune, timestamp } = input
   
   const dailyNumber = calculateDailyNumber(birthDate, timestamp)
   const energyLevel = calculateEnergyLevel(mood, selectedRune, dailyNumber, intention)
@@ -202,7 +197,8 @@ export const performDailyRitual = (input: DailyRitualInput): DailyRitualResult =
     energyLevel,
     symbolTheme,
     mood,
-    intention
+    intention,
+    questionCategory
   )
   
   return {

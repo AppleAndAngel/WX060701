@@ -1,10 +1,11 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import { performDailyRitual, getTodayDateKey, calculateConsecutiveStreak, calculateCycleData, getMostFrequentThemes } from '@/algorithms/dailyRitual'
+import { questionCategories } from '@/algorithms/questionCategory'
 import { saveDailyRitualResult, getAllDailyRitualRecords, getDailyRitualRecordByDate } from '@/utils/storage'
-import type { DailyRitualInput, DailyRitualResult, Rune } from '@/types'
+import type { DailyRitualInput, DailyRitualResult, Rune, QuestionCategory, QuestionCategoryOption } from '@/types'
 
-type RitualPhase = 'intro' | 'mood' | 'intention' | 'rune' | 'calculating' | 'complete'
+type RitualPhase = 'intro' | 'category' | 'mood' | 'intention' | 'rune' | 'calculating' | 'complete'
 
 const runesData: Rune[] = [
   { id: 1, name: '法胡', symbol: 'ᚠ', meaning: '财富、成就' },
@@ -35,6 +36,7 @@ export const useDailyRitualStore = defineStore('dailyRitual', () => {
   const phase = ref<RitualPhase>('intro')
   const name = ref('')
   const birthDate = ref('')
+  const questionCategory = ref<QuestionCategory | null>(null)
   const mood = ref('')
   const intention = ref('')
   const selectedRune = ref<number | null>(null)
@@ -45,6 +47,7 @@ export const useDailyRitualStore = defineStore('dailyRitual', () => {
 
   const runes = ref<Rune[]>(runesData)
   const moods = moodOptions
+  const categories = ref<QuestionCategoryOption[]>(questionCategories)
 
   const hasCheckedInToday = computed(() => {
     const todayKey = getTodayDateKey()
@@ -75,6 +78,14 @@ export const useDailyRitualStore = defineStore('dailyRitual', () => {
     return allRecords.value.length
   })
 
+  const canProceedToCategory = computed(() => {
+    return true
+  })
+
+  const canProceedToMood = computed(() => {
+    return questionCategory.value !== null
+  })
+
   const canProceedToIntention = computed(() => {
     return mood.value.length > 0
   })
@@ -92,8 +103,13 @@ export const useDailyRitualStore = defineStore('dailyRitual', () => {
     todayRecord.value = getDailyRitualRecordByDate(todayKey)
     if (todayRecord.value) {
       currentResult.value = todayRecord.value
+      questionCategory.value = todayRecord.value.input.questionCategory
       phase.value = 'complete'
     }
+  }
+
+  const setQuestionCategory = (category: QuestionCategory) => {
+    questionCategory.value = category
   }
 
   const setMood = (moodValue: string) => {
@@ -114,6 +130,8 @@ export const useDailyRitualStore = defineStore('dailyRitual', () => {
         loadTodayRecord()
         return
       }
+      phase.value = 'category'
+    } else if (phase.value === 'category' && canProceedToMood.value) {
       phase.value = 'mood'
     } else if (phase.value === 'mood' && canProceedToIntention.value) {
       phase.value = 'intention'
@@ -126,8 +144,10 @@ export const useDailyRitualStore = defineStore('dailyRitual', () => {
   }
 
   const prevPhase = () => {
-    if (phase.value === 'mood') {
+    if (phase.value === 'category') {
       phase.value = 'intro'
+    } else if (phase.value === 'mood') {
+      phase.value = 'category'
     } else if (phase.value === 'intention') {
       phase.value = 'mood'
     } else if (phase.value === 'rune') {
@@ -142,6 +162,7 @@ export const useDailyRitualStore = defineStore('dailyRitual', () => {
     const input: DailyRitualInput = {
       name: name.value.trim() || 'Anonymous',
       birthDate: birthDate.value || '1990-01-01',
+      questionCategory: questionCategory.value,
       mood: mood.value,
       intention: intention.value.trim(),
       selectedRune: selectedRune.value!,
@@ -176,6 +197,7 @@ export const useDailyRitualStore = defineStore('dailyRitual', () => {
     phase.value = 'intro'
     name.value = ''
     birthDate.value = ''
+    questionCategory.value = null
     mood.value = ''
     intention.value = ''
     selectedRune.value = null
@@ -194,6 +216,7 @@ export const useDailyRitualStore = defineStore('dailyRitual', () => {
     phase,
     name,
     birthDate,
+    questionCategory,
     mood,
     intention,
     selectedRune,
@@ -203,6 +226,7 @@ export const useDailyRitualStore = defineStore('dailyRitual', () => {
     todayRecord,
     runes,
     moods,
+    categories,
     hasCheckedInToday,
     allRecords,
     ritualDates,
@@ -210,10 +234,13 @@ export const useDailyRitualStore = defineStore('dailyRitual', () => {
     cycleData,
     frequentThemes,
     totalRituals,
+    canProceedToCategory,
+    canProceedToMood,
     canProceedToIntention,
     canProceedToRune,
     canStartCalculation,
     loadTodayRecord,
+    setQuestionCategory,
     setMood,
     setIntention,
     selectRune,

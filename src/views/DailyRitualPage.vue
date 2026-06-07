@@ -4,6 +4,7 @@ import { useRouter } from 'vue-router'
 import { useDailyRitualStore } from '@/stores/dailyRitual'
 import MysticButton from '@/components/common/MysticButton.vue'
 import { useDivinationStore } from '@/stores/divination'
+import { getCategoryLanguage } from '@/algorithms/questionCategory'
 
 const router = useRouter()
 const store = useDailyRitualStore()
@@ -12,12 +13,17 @@ const showContent = ref(false)
 
 const phases = [
   { key: 'intro', label: '开始', icon: '☀' },
+  { key: 'category', label: '方向', icon: '✧' },
   { key: 'mood', label: '心情', icon: '☺' },
   { key: 'intention', label: '意图', icon: '✦' },
   { key: 'rune', label: '符文', icon: 'ᚠ' },
   { key: 'calculating', label: '演算', icon: '∑' },
   { key: 'complete', label: '完成', icon: '✧' }
 ]
+
+const categoryLang = computed(() => {
+  return getCategoryLanguage(store.questionCategory)
+})
 
 const weekDays = ['周一', '周二', '周三', '周四', '周五', '周六', '周日']
 
@@ -40,6 +46,7 @@ const getPhaseIndex = () => {
 const canGoNext = () => {
   switch (store.phase) {
     case 'intro': return true
+    case 'category': return store.canProceedToMood
     case 'mood': return store.canProceedToIntention
     case 'intention': return true
     case 'rune': return store.canStartCalculation
@@ -48,7 +55,7 @@ const canGoNext = () => {
 }
 
 const canGoBack = () => {
-  return ['mood', 'intention', 'rune'].includes(store.phase)
+  return ['category', 'mood', 'intention', 'rune'].includes(store.phase)
 }
 
 const getGeometryPath = computed(() => {
@@ -104,7 +111,7 @@ const selectedRuneInfo = computed(() => {
       <div class="max-w-4xl mx-auto flex items-center justify-between">
         <div class="flex items-center gap-2">
           <div
-            v-for="(phase, index) in phases.slice(0, 5)"
+            v-for="(phase, index) in phases.slice(0, 6)"
             :key="phase.key"
             class="flex items-center"
           >
@@ -122,7 +129,7 @@ const selectedRuneInfo = computed(() => {
               </span>
             </div>
             <div
-              v-if="index < 4"
+              v-if="index < 5"
               class="w-6 h-px mx-1"
               :class="{
                 'bg-gold/40': index < getPhaseIndex(),
@@ -147,7 +154,7 @@ const selectedRuneInfo = computed(() => {
             size="sm"
             @click="store.nextPhase()"
           >
-            {{ store.phase === 'rune' ? '开始演算 ✦' : store.phase === 'intro' ? '开始今日签到 ✧' : '下一步 →' }}
+            {{ store.phase === 'rune' ? '开始演算 ✦' : store.phase === 'intro' ? '开始今日签到 ✧' : store.phase === 'category' ? '确认方向 →' : '下一步 →' }}
           </MysticButton>
         </div>
       </div>
@@ -214,10 +221,65 @@ const selectedRuneInfo = computed(() => {
           </div>
         </div>
 
+        <div v-else-if="store.phase === 'category'" key="category" class="max-w-2xl mx-auto">
+          <div class="text-center mb-10">
+            <h2 class="font-display text-3xl text-gold mb-4 tracking-wider">
+              选择关注方向
+            </h2>
+            <p class="font-body text-silver/80">
+              选择一个你今天想要探索的生命领域
+            </p>
+          </div>
+
+          <div class="grid grid-cols-2 gap-4">
+            <button
+              v-for="category in store.categories"
+              :key="category.key"
+              @click="store.setQuestionCategory(category.key)"
+              class="p-6 rounded-xl flex flex-col items-center gap-3 transition-all duration-300 border group"
+              :class="{
+                'scale-105': store.questionCategory === category.key,
+                'bg-silver/10 border-transparent hover:border-gold/30 hover:bg-silver/20': store.questionCategory !== category.key
+              }"
+              :style="store.questionCategory === category.key ? {
+                background: `${category.color}20`,
+                borderColor: `${category.color}60`
+              } : {}"
+            >
+              <span 
+                class="text-5xl transition-transform duration-300 group-hover:scale-110"
+                :style="{ color: store.questionCategory === category.key ? category.color : '' }"
+              >
+                {{ category.icon }}
+              </span>
+              <div class="text-center">
+                <div 
+                  class="text-lg font-display tracking-wider"
+                  :style="{ color: store.questionCategory === category.key ? category.color : '' }"
+                  :class="store.questionCategory === category.key ? '' : 'text-silver/90'"
+                >
+                  {{ category.label }}
+                </div>
+                <div class="text-xs text-silver/60 font-mono mt-1">
+                  {{ category.description }}
+                </div>
+              </div>
+            </button>
+          </div>
+
+          <div class="mt-8 p-6 rounded-xl bg-silver/10 border border-silver/20">
+            <p class="font-mono text-xs text-silver/70 leading-relaxed">
+              <span class="text-purple">提示：</span>
+              选择一个方向后，后续的仪式语言、解读重点将围绕该领域展开。
+              你可以根据当前最关心的问题进行选择，让宇宙能量聚焦于你真正在意的方向。
+            </p>
+          </div>
+        </div>
+
         <div v-else-if="store.phase === 'mood'" key="mood" class="max-w-2xl mx-auto">
           <div class="text-center mb-10">
             <h2 class="font-display text-3xl text-gold mb-4 tracking-wider">
-              此刻的心情
+              {{ categoryLang.moodPrompt }}
             </h2>
             <p class="font-body text-silver/80">
               选择最能代表你当前状态的情绪
@@ -256,7 +318,7 @@ const selectedRuneInfo = computed(() => {
           <div class="space-y-4">
             <textarea
               v-model="store.intention"
-              placeholder="今天我希望..."
+              :placeholder="categoryLang.intentionPlaceholder"
               class="w-full h-40 p-6 rounded-xl bg-silver/10 border border-silver/20 text-silver placeholder-silver/40 font-body text-lg resize-none focus:outline-none focus:border-gold/50 transition-colors duration-300"
               maxlength="200"
             />
@@ -268,8 +330,7 @@ const selectedRuneInfo = computed(() => {
           <div class="mt-8 p-6 rounded-xl bg-silver/10 border border-silver/20">
             <p class="font-mono text-xs text-silver/70 leading-relaxed">
               <span class="text-purple">提示：</span>
-              意图可以是具体的目标，也可以是一种状态，如「保持平静」、「充满创造力」或「与他人建立连接」。
-              即使留白，宇宙也会接收到你当下的能量状态。
+              {{ categoryLang.intentionHint }}
             </p>
           </div>
         </div>
@@ -277,10 +338,10 @@ const selectedRuneInfo = computed(() => {
         <div v-else-if="store.phase === 'rune'" key="rune" class="max-w-3xl mx-auto">
           <div class="text-center mb-10">
             <h2 class="font-display text-3xl text-gold mb-4 tracking-wider">
-              选择今日符文
+              {{ categoryLang.runePrompt }}
             </h2>
             <p class="font-body text-silver/80">
-              直觉地选择一个与你今日能量共鸣的符文
+              直觉地选择一个与你能量共鸣的符文
             </p>
           </div>
 
@@ -319,7 +380,7 @@ const selectedRuneInfo = computed(() => {
               </div>
             </div>
             <h2 class="font-display text-2xl text-gold mb-4 tracking-wider">
-              正在连接宇宙能量...
+              {{ categoryLang.calculatingText }}
             </h2>
             <p class="font-body text-silver/70">
               符文正在解读你的能量轨迹
@@ -419,7 +480,7 @@ const selectedRuneInfo = computed(() => {
             <div class="space-y-6">
               <div class="p-6 rounded-xl bg-glass">
                 <h3 class="font-display text-xl text-gold mb-4 tracking-wider">
-                  能量指数
+                  {{ categoryLang.energyTitle }}
                 </h3>
                 <div class="flex items-end gap-4 mb-4">
                   <div class="font-display text-5xl text-gold">
@@ -442,7 +503,7 @@ const selectedRuneInfo = computed(() => {
 
               <div class="p-6 rounded-xl bg-glass">
                 <h3 class="font-display text-xl text-gold mb-4 tracking-wider">
-                  今日关键词
+                  {{ categoryLang.keywordsTitle }}
                 </h3>
                 <div class="flex flex-wrap gap-2">
                   <span
@@ -457,7 +518,7 @@ const selectedRuneInfo = computed(() => {
 
               <div class="p-6 rounded-xl bg-glass">
                 <h3 class="font-display text-xl text-gold mb-4 tracking-wider">
-                  符文启示
+                  {{ categoryLang.runeTitle }}
                 </h3>
                 <div class="flex items-center gap-4">
                   <span class="text-5xl text-gold">
@@ -478,7 +539,7 @@ const selectedRuneInfo = computed(() => {
 
           <div class="p-6 rounded-xl bg-glass mb-8">
             <h3 class="font-display text-xl text-gold mb-4 tracking-wider">
-              今日解读
+              {{ categoryLang.interpretationTitle }}
             </h3>
             <div class="space-y-4">
               <p
@@ -493,7 +554,7 @@ const selectedRuneInfo = computed(() => {
 
           <div class="p-6 rounded-xl bg-purple/10 border border-purple/30 mb-8">
             <h3 class="font-display text-xl text-purple mb-4 tracking-wider">
-              ✧ 今日指引
+              {{ categoryLang.guidanceTitle }}
             </h3>
             <p class="font-body text-silver/90 leading-relaxed">
               {{ store.currentResult.interpretation.guidance }}
@@ -502,7 +563,7 @@ const selectedRuneInfo = computed(() => {
 
           <div class="p-6 rounded-xl bg-glass mb-8">
             <h3 class="font-display text-xl text-gold mb-6 tracking-wider">
-              本周能量轨迹
+              {{ categoryLang.weekEnergyTitle }}
             </h3>
             <div class="flex items-end justify-between gap-2 h-32 mb-4">
               <div

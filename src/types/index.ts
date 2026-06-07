@@ -333,9 +333,20 @@ export interface LoveTimingResult {
   createdAt: number
 }
 
+export type QuestionCategory = 'love' | 'career' | 'wealth' | 'self-growth'
+
+export interface QuestionCategoryOption {
+  key: QuestionCategory
+  label: string
+  icon: string
+  color: string
+  description: string
+}
+
 export interface DailyRitualInput {
   name: string
   birthDate: string
+  questionCategory: QuestionCategory | null
   mood: string
   intention: string
   selectedRune: number
