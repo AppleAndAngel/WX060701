@@ -384,27 +384,28 @@ const calculateDreamNumber = (
     description: '持续求和直到得到个位数或主数字(11, 22, 33)'
   })
 
-  const timestampDigits = timestamp.toString().slice(-8)
-  const timestampSum = timestampDigits.split('').reduce((acc, d) => acc + parseInt(d, 10), 0)
-  const timestampReduced = reduceNumber(timestampSum)
+  const contentHash = hashString(cleanContent + cleanMood)
+  const contentHashStr = Math.abs(contentHash).toString().slice(-8)
+  const contentHashSum = contentHashStr.split('').reduce((acc, d) => acc + parseInt(d, 10), 0)
+  const contentHashReduced = reduceNumber(contentHashSum)
 
   steps.push({
     step: 4,
-    name: '时间能量融合',
-    formula: `timestampDigits → Σ → reduce`,
-    input: timestamp,
-    output: { timestampDigits, timestampReduced },
-    description: '融入占卜时刻的时间能量'
+    name: '内容能量融合',
+    formula: `hash(content + mood) → Σ → reduce`,
+    input: { cleanContent, cleanMood },
+    output: { contentHashStr, contentHashReduced },
+    description: '基于梦境内容生成稳定的能量指纹'
   })
 
-  const totalSum = contentReduced + moodReduced + timestampReduced + coreNumbers.soul
+  const totalSum = contentReduced + moodReduced + contentHashReduced + coreNumbers.soul
   const dreamNumber = reduceNumber(totalSum)
 
   steps.push({
     step: 5,
     name: '梦境数字合成',
-    formula: `content(${contentReduced}) + mood(${moodReduced}) + time(${timestampReduced}) + soul(${coreNumbers.soul}) = ${totalSum} → reduce(${totalSum}) = ${dreamNumber}`,
-    input: { contentReduced, moodReduced, timestampReduced, soulNumber: coreNumbers.soul },
+    formula: `content(${contentReduced}) + mood(${moodReduced}) + contentHash(${contentHashReduced}) + soul(${coreNumbers.soul}) = ${totalSum} → reduce(${totalSum}) = ${dreamNumber}`,
+    input: { contentReduced, moodReduced, contentHashReduced, soulNumber: coreNumbers.soul },
     output: dreamNumber,
     description: '整合所有能量维度，得到最终的梦境核心数字'
   })
@@ -449,7 +450,7 @@ const generateDreamInterpretation = (
   input: DreamInterpretationInput
 ): DreamInterpretation => {
   const meaning = numberDreamMeanings[dreamNumber] || numberDreamMeanings[9]
-  const seed = `${input.name}-${input.timestamp}-${dreamNumber}`
+  const seed = `${input.name}-${input.birthDate}-${input.dreamContent}-${input.dreamMood}-${dreamNumber}`
   const rng = new DeterministicRandom(seed)
 
   const titleVariations = [
@@ -503,7 +504,7 @@ export const performDreamInterpretation = (input: DreamInterpretationInput): Dre
 
   const { coreNumbers, allSteps: coreSteps } = calculateCoreNumbers(name, birthDate)
 
-  const seed = `${name}-${birthDate}-${timestamp}`
+  const seed = `${name}-${birthDate}-${dreamContent}-${dreamMood}`
 
   const emotions = analyzeEmotions(dreamContent, dreamMood, seed)
   const symbols = analyzeSymbols(dreamContent, seed)
@@ -551,7 +552,7 @@ export const performDreamInterpretation = (input: DreamInterpretationInput): Dre
     ...dreamSteps
   ]
 
-  const id = hashString(`${name}-${birthDate}-${dreamContent.slice(0, 50)}-${timestamp}`).toString(16)
+  const id = hashString(`${name}-${birthDate}-${dreamContent}-${dreamMood}`).toString(16)
 
   return {
     id,
