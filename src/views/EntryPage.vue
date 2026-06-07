@@ -26,6 +26,10 @@ const goToCareerChoice = () => {
   router.push('/career-choice')
 }
 
+const goToLoveTiming = () => {
+  router.push('/love-timing')
+}
+
 const goToArchive = () => {
   router.push('/archive')
 }
@@ -131,6 +135,16 @@ onMounted(() => {
                 <span class="text-xl">⚖</span>
                 职业抉择
                 <span class="text-xl">⚖</span>
+              </MysticButton>
+              
+              <MysticButton
+                size="lg"
+                variant="secondary"
+                @click="goToLoveTiming"
+              >
+                <span class="text-xl">♥</span>
+                爱情时机
+                <span class="text-xl">♥</span>
               </MysticButton>
               
               <MysticButton

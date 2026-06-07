@@ -3,14 +3,14 @@ import { ref, onMounted, computed, watch } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useArchiveStore } from '@/stores/archive'
 import MysticButton from '@/components/common/MysticButton.vue'
-import type { DivinationResult, SynastryResult, YearlyResult, CareerChoiceResult } from '@/types'
+import type { DivinationResult, SynastryResult, YearlyResult, CareerChoiceResult, LoveTimingResult } from '@/types'
 
 const router = useRouter()
 const route = useRoute()
 const archiveStore = useArchiveStore()
 const isLoading = ref(true)
 const showConfirmClear = ref(false)
-const activeFilter = ref<'all' | 'divination' | 'synastry' | 'yearly' | 'career-choice'>('all')
+const activeFilter = ref<'all' | 'divination' | 'synastry' | 'yearly' | 'career-choice' | 'love-timing'>('all')
 
 const loadRecordsData = () => {
   isLoading.value = true
@@ -70,28 +70,37 @@ const filteredRecords = computed(() => {
   if (activeFilter.value === 'career-choice') {
     return archiveStore.records.filter(r => archiveStore.isCareerChoiceRecord(r))
   }
+  if (activeFilter.value === 'love-timing') {
+    return archiveStore.records.filter(r => archiveStore.isLoveTimingRecord(r))
+  }
   return archiveStore.records
 })
 
-const isSynastryRecord = (record: DivinationResult | SynastryResult | YearlyResult | CareerChoiceResult): record is SynastryResult => {
+const isSynastryRecord = (record: DivinationResult | SynastryResult | YearlyResult | CareerChoiceResult | LoveTimingResult): record is SynastryResult => {
   return archiveStore.isSynastryRecord(record)
 }
 
-const isYearlyRecord = (record: DivinationResult | SynastryResult | YearlyResult | CareerChoiceResult): record is YearlyResult => {
+const isYearlyRecord = (record: DivinationResult | SynastryResult | YearlyResult | CareerChoiceResult | LoveTimingResult): record is YearlyResult => {
   return archiveStore.isYearlyRecord(record)
 }
 
-const isCareerChoiceRecord = (record: DivinationResult | SynastryResult | YearlyResult | CareerChoiceResult): record is CareerChoiceResult => {
+const isCareerChoiceRecord = (record: DivinationResult | SynastryResult | YearlyResult | CareerChoiceResult | LoveTimingResult): record is CareerChoiceResult => {
   return archiveStore.isCareerChoiceRecord(record)
 }
 
-const viewResult = (record: DivinationResult | SynastryResult | YearlyResult | CareerChoiceResult) => {
+const isLoveTimingRecord = (record: DivinationResult | SynastryResult | YearlyResult | CareerChoiceResult | LoveTimingResult): record is LoveTimingResult => {
+  return archiveStore.isLoveTimingRecord(record)
+}
+
+const viewResult = (record: DivinationResult | SynastryResult | YearlyResult | CareerChoiceResult | LoveTimingResult) => {
   if (isSynastryRecord(record)) {
     router.push(`/synastry/result/${record.id}`)
   } else if (isYearlyRecord(record)) {
     router.push(`/yearly/result/${record.id}`)
   } else if (isCareerChoiceRecord(record)) {
     router.push(`/career-choice/result/${record.id}`)
+  } else if (isLoveTimingRecord(record)) {
+    router.push(`/love-timing/result/${record.id}`)
   } else {
     router.push(`/result/${record.id}`)
   }
@@ -243,6 +252,10 @@ const maxCount = computed(() => {
                 <span class="text-silver/70 text-sm">职业抉择</span>
                 <span class="font-display text-xl text-orange-400">{{ archiveStore.careerChoiceCount }}</span>
               </div>
+              <div class="flex justify-between items-center">
+                <span class="text-silver/70 text-sm">爱情时机</span>
+                <span class="font-display text-xl text-pink-400">{{ archiveStore.loveTimingCount }}</span>
+              </div>
               <div v-if="archiveStore.getMostFrequentNumber() !== null" class="flex justify-between items-center">
                 <span class="text-silver/70 text-sm">高频数字</span>
                 <span class="font-display text-2xl text-purple">{{ archiveStore.getMostFrequentNumber() }}</span>
@@ -320,6 +333,16 @@ const maxCount = computed(() => {
               >
                 抉择 ({{ archiveStore.careerChoiceCount }})
               </button>
+              <button
+                @click="activeFilter = 'love-timing'"
+                class="px-3 py-1 rounded-full text-xs font-mono transition-all duration-300"
+                :class="{
+                  'bg-pink-500/20 text-pink-400 border border-pink-500/30': activeFilter === 'love-timing',
+                  'bg-silver/10 text-silver/60 border border-silver/20 hover:border-pink-500/30': activeFilter !== 'love-timing'
+                }"
+              >
+                时机 ({{ archiveStore.loveTimingCount }})
+              </button>
             </div>
           </div>
           <button
@@ -343,7 +366,8 @@ const maxCount = computed(() => {
             :class="{
               'border-l-4 border-l-purple': isSynastryRecord(record),
               'border-l-4 border-l-cyan-400': isYearlyRecord(record),
-              'border-l-4 border-l-orange-400': isCareerChoiceRecord(record)
+              'border-l-4 border-l-orange-400': isCareerChoiceRecord(record),
+              'border-l-4 border-l-pink-400': isLoveTimingRecord(record)
             }"
           >
             <div class="flex items-start justify-between gap-4">
@@ -369,6 +393,12 @@ const maxCount = computed(() => {
                     class="px-2 py-0.5 rounded bg-orange-500/20 text-orange-400 text-xs font-mono"
                   >
                     抉择
+                  </span>
+                  <span
+                    v-else-if="isLoveTimingRecord(record)"
+                    class="px-2 py-0.5 rounded bg-pink-500/20 text-pink-400 text-xs font-mono"
+                  >
+                    时机 · {{ (record as LoveTimingResult).input.scenario === 'progression' ? '关系推进' : (record as LoveTimingResult).input.scenario === 'reconciliation' ? '复合' : '表白' }}
                   </span>
                   <span v-else class="px-2 py-0.5 rounded bg-gold/20 text-gold text-xs font-mono">
                     占卜
@@ -414,6 +444,18 @@ const maxCount = computed(() => {
                       {{ (record as CareerChoiceResult).input.optionB.name }}
                     </span>
                   </template>
+                  <template v-else-if="isLoveTimingRecord(record)">
+                    <span class="px-2 py-0.5 rounded bg-gold/10 text-gold/80 text-xs font-mono">
+                      {{ (record as LoveTimingResult).input.yourName }}
+                    </span>
+                    <span class="text-silver/50">♥</span>
+                    <span class="px-2 py-0.5 rounded bg-pink-500/10 text-pink-400/80 text-xs font-mono">
+                      {{ (record as LoveTimingResult).input.theirName }}
+                    </span>
+                    <span class="px-2 py-0.5 rounded bg-gold/10 text-gold/80 text-xs font-mono">
+                      {{ getGeometryName(record.geometry.type) }}
+                    </span>
+                  </template>
                   <template v-else>
                     <span class="px-2 py-0.5 rounded bg-gold/10 text-gold/80 text-xs font-mono">
                       {{ record.input.name }}
@@ -440,6 +482,9 @@ const maxCount = computed(() => {
                   </template>
                   <template v-else-if="isCareerChoiceRecord(record)">
                     {{ (record as CareerChoiceResult).interpretation.overallDescription }}
+                  </template>
+                  <template v-else-if="isLoveTimingRecord(record)">
+                    {{ (record as LoveTimingResult).interpretation.overallDescription }}
                   </template>
                   <template v-else>
                     {{ record.interpretation.paragraphs[0] }}
@@ -504,6 +549,33 @@ const maxCount = computed(() => {
                         {{ (record as CareerChoiceResult).interpretation.pathB.suitability }}
                       </span>
                       <span class="text-xs text-silver/60 font-mono">{{ (record as CareerChoiceResult).input.optionB.name }}</span>
+                    </div>
+                  </template>
+                  <template v-else-if="isLoveTimingRecord(record)">
+                    <div class="flex items-center gap-2">
+                      <span class="text-xs text-silver/60 font-mono">{{ (record as LoveTimingResult).input.yourName }}</span>
+                      <span class="w-6 h-6 rounded-full bg-gold/20 flex items-center justify-center text-xs font-display text-gold">
+                        {{ (record as LoveTimingResult).yourNumbers.lifePath }}
+                      </span>
+                      <span class="w-6 h-6 rounded-full bg-purple/20 flex items-center justify-center text-xs font-display text-purple">
+                        {{ (record as LoveTimingResult).yourNumbers.soul }}
+                      </span>
+                    </div>
+                    <span class="text-silver/40">♥</span>
+                    <div class="flex items-center gap-2">
+                      <span class="w-6 h-6 rounded-full bg-gold/20 flex items-center justify-center text-xs font-display text-gold">
+                        {{ (record as LoveTimingResult).theirNumbers.lifePath }}
+                      </span>
+                      <span class="w-6 h-6 rounded-full bg-purple/20 flex items-center justify-center text-xs font-display text-purple">
+                        {{ (record as LoveTimingResult).theirNumbers.soul }}
+                      </span>
+                      <span class="text-xs text-silver/60 font-mono">{{ (record as LoveTimingResult).input.theirName }}</span>
+                    </div>
+                    <div class="ml-auto flex items-center gap-1">
+                      <span class="text-xs text-silver/60 font-mono">时机指数</span>
+                      <span class="font-display text-lg text-pink-400">
+                        {{ (record as LoveTimingResult).interpretation.overallScore }}
+                      </span>
                     </div>
                   </template>
                   <template v-else>

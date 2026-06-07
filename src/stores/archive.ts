@@ -1,7 +1,7 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import { getAllArchiveRecords, deleteArchiveRecord, clearAllArchiveRecords } from '@/utils/storage'
-import type { ArchiveRecord, DivinationResult, SynastryResult, YearlyResult, CareerChoiceResult } from '@/types'
+import type { ArchiveRecord, DivinationResult, SynastryResult, YearlyResult, CareerChoiceResult, LoveTimingResult } from '@/types'
 
 export const useArchiveStore = defineStore('archive', () => {
   const records = ref<ArchiveRecord[]>([])
@@ -12,6 +12,7 @@ export const useArchiveStore = defineStore('archive', () => {
   const synastryCount = computed(() => records.value.filter(r => isSynastryRecord(r)).length)
   const yearlyCount = computed(() => records.value.filter(r => isYearlyRecord(r)).length)
   const careerChoiceCount = computed(() => records.value.filter(r => isCareerChoiceRecord(r)).length)
+  const loveTimingCount = computed(() => records.value.filter(r => isLoveTimingRecord(r)).length)
 
   const isSynastryRecord = (r: ArchiveRecord): r is SynastryResult => {
     return 'type' in r && r.type === 'synastry'
@@ -27,6 +28,10 @@ export const useArchiveStore = defineStore('archive', () => {
 
   const isCareerChoiceRecord = (r: ArchiveRecord): r is CareerChoiceResult => {
     return 'type' in r && r.type === 'career-choice'
+  }
+
+  const isLoveTimingRecord = (r: ArchiveRecord): r is LoveTimingResult => {
+    return 'type' in r && r.type === 'love-timing'
   }
 
   const numberStats = computed(() => {
@@ -48,6 +53,11 @@ export const useArchiveStore = defineStore('archive', () => {
           r.interpretation.pathA.coreNumbers.soul, r.interpretation.pathA.coreNumbers.personality,
           r.interpretation.pathB.coreNumbers.lifePath, r.interpretation.pathB.coreNumbers.destiny,
           r.interpretation.pathB.coreNumbers.soul, r.interpretation.pathB.coreNumbers.personality
+        ]
+      } else if (isLoveTimingRecord(r)) {
+        nums = [
+          r.yourNumbers.lifePath, r.yourNumbers.destiny, r.yourNumbers.soul, r.yourNumbers.personality,
+          r.theirNumbers.lifePath, r.theirNumbers.destiny, r.theirNumbers.soul, r.theirNumbers.personality
         ]
       }
       nums.forEach(n => {
@@ -112,6 +122,7 @@ export const useArchiveStore = defineStore('archive', () => {
     synastryCount,
     yearlyCount,
     careerChoiceCount,
+    loveTimingCount,
     numberStats,
     geometryStats,
     relationshipStats,
@@ -119,6 +130,7 @@ export const useArchiveStore = defineStore('archive', () => {
     isDivinationRecord,
     isYearlyRecord,
     isCareerChoiceRecord,
+    isLoveTimingRecord,
     loadRecords,
     removeRecord,
     clearAll,

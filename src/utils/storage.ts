@@ -1,10 +1,11 @@
-import type { DivinationResult, SynastryResult, ArchiveRecord, YearlyResult, CareerChoiceResult } from '@/types'
+import type { DivinationResult, SynastryResult, ArchiveRecord, YearlyResult, CareerChoiceResult, LoveTimingResult } from '@/types'
 import { simpleEncrypt, simpleDecrypt } from './hash'
 
 const STORAGE_KEY = 'divination_archive'
 const SYNASTRY_STORAGE_KEY = 'synastry_archive'
 const YEARLY_STORAGE_KEY = 'yearly_archive'
 const CAREER_CHOICE_STORAGE_KEY = 'career_choice_archive'
+const LOVE_TIMING_STORAGE_KEY = 'love_timing_archive'
 const MAX_RECORDS = 50
 
 export const saveResult = (result: DivinationResult): void => {
@@ -151,17 +152,54 @@ export const clearAllCareerChoiceRecords = (): void => {
   localStorage.removeItem(CAREER_CHOICE_STORAGE_KEY)
 }
 
+export const saveLoveTimingResult = (result: LoveTimingResult): void => {
+  const records = getAllLoveTimingRecords()
+  records.unshift(result)
+  if (records.length > MAX_RECORDS) {
+    records.splice(MAX_RECORDS)
+  }
+  const encrypted = simpleEncrypt(JSON.stringify(records))
+  localStorage.setItem(LOVE_TIMING_STORAGE_KEY, encrypted)
+}
+
+export const getAllLoveTimingRecords = (): LoveTimingResult[] => {
+  const encrypted = localStorage.getItem(LOVE_TIMING_STORAGE_KEY)
+  if (!encrypted) return []
+  try {
+    const decrypted = simpleDecrypt(encrypted)
+    return JSON.parse(decrypted) || []
+  } catch {
+    return []
+  }
+}
+
+export const getLoveTimingRecordById = (id: string): LoveTimingResult | null => {
+  const records = getAllLoveTimingRecords()
+  return records.find(r => r.id === id) || null
+}
+
+export const deleteLoveTimingRecord = (id: string): void => {
+  const records = getAllLoveTimingRecords().filter(r => r.id !== id)
+  const encrypted = simpleEncrypt(JSON.stringify(records))
+  localStorage.setItem(LOVE_TIMING_STORAGE_KEY, encrypted)
+}
+
+export const clearAllLoveTimingRecords = (): void => {
+  localStorage.removeItem(LOVE_TIMING_STORAGE_KEY)
+}
+
 export const getAllArchiveRecords = (): ArchiveRecord[] => {
   const divinationRecords = getAllRecords()
   const synastryRecords = getAllSynastryRecords()
   const yearlyRecords = getAllYearlyRecords()
   const careerChoiceRecords = getAllCareerChoiceRecords()
-  const allRecords = [...divinationRecords, ...synastryRecords, ...yearlyRecords, ...careerChoiceRecords]
+  const loveTimingRecords = getAllLoveTimingRecords()
+  const allRecords = [...divinationRecords, ...synastryRecords, ...yearlyRecords, ...careerChoiceRecords, ...loveTimingRecords]
   return allRecords.sort((a, b) => b.createdAt - a.createdAt)
 }
 
 export const getArchiveRecordById = (id: string): ArchiveRecord | null => {
-  return getRecordById(id) || getSynastryRecordById(id) || getYearlyRecordById(id) || getCareerChoiceRecordById(id) || null
+  return getRecordById(id) || getSynastryRecordById(id) || getYearlyRecordById(id) || getCareerChoiceRecordById(id) || getLoveTimingRecordById(id) || null
 }
 
 export const deleteArchiveRecord = (id: string): void => {
@@ -169,6 +207,7 @@ export const deleteArchiveRecord = (id: string): void => {
   deleteSynastryRecord(id)
   deleteYearlyRecord(id)
   deleteCareerChoiceRecord(id)
+  deleteLoveTimingRecord(id)
 }
 
 export const clearAllArchiveRecords = (): void => {
@@ -176,4 +215,5 @@ export const clearAllArchiveRecords = (): void => {
   clearAllSynastryRecords()
   clearAllYearlyRecords()
   clearAllCareerChoiceRecords()
+  clearAllLoveTimingRecords()
 }

@@ -258,4 +258,79 @@ export interface CareerChoiceResult {
   createdAt: number
 }
 
-export type ArchiveRecord = DivinationResult | SynastryResult | YearlyResult | CareerChoiceResult
+export type LoveTimingScenario = 'progression' | 'reconciliation' | 'confession'
+
+export interface LoveTimingInput {
+  yourName: string
+  yourBirthDate: string
+  theirName: string
+  theirBirthDate: string
+  scenario: LoveTimingScenario
+  currentSituation: string
+  timestamp: number
+}
+
+export interface StageSuggestion {
+  stage: number
+  name: string
+  period: string
+  energy: number
+  description: string
+  actions: string[]
+  vibe: string
+}
+
+export interface RiskWarning {
+  level: 'low' | 'medium' | 'high' | 'critical'
+  aspect: string
+  description: string
+  mitigation: string
+}
+
+export interface ActionWindow {
+  name: string
+  startDate: string
+  endDate: string
+  energyScore: number
+  type: 'optimal' | 'good' | 'challenging'
+  description: string
+  recommendedActions: string[]
+}
+
+export interface EnergyPattern {
+  name: string
+  value: number
+  description: string
+  trend: 'rising' | 'stable' | 'falling'
+}
+
+export interface LoveTimingInterpretation {
+  title: string
+  overallScore: number
+  overallDescription: string
+  coreEnergy: string
+  stages: StageSuggestion[]
+  risks: RiskWarning[]
+  actionWindows: ActionWindow[]
+  energyPatterns: EnergyPattern[]
+  finalAdvice: string
+  doList: string[]
+  dontList: string[]
+  keywords: string[]
+  warning?: string
+}
+
+export interface LoveTimingResult {
+  id: string
+  type: 'love-timing'
+  input: LoveTimingInput
+  yourNumbers: CoreNumbers
+  theirNumbers: CoreNumbers
+  geometry: GeometryData
+  starMap: StarMap
+  interpretation: LoveTimingInterpretation
+  calculationTrace: CalculationStep[]
+  createdAt: number
+}
+
+export type ArchiveRecord = DivinationResult | SynastryResult | YearlyResult | CareerChoiceResult | LoveTimingResult

@@ -9,6 +9,8 @@ import YearlyInputPage from '@/views/YearlyInputPage.vue'
 import YearlyResultPage from '@/views/YearlyResultPage.vue'
 import CareerChoiceInputPage from '@/views/CareerChoiceInputPage.vue'
 import CareerChoiceResultPage from '@/views/CareerChoiceResultPage.vue'
+import LoveTimingInputPage from '@/views/LoveTimingInputPage.vue'
+import LoveTimingResultPage from '@/views/LoveTimingResultPage.vue'
 
 const router = createRouter({
   history: createWebHistory(),
@@ -65,6 +67,17 @@ const router = createRouter({
       path: '/career-choice/result/:id',
       name: 'career-choice-result',
       component: CareerChoiceResultPage,
+      props: true
+    },
+    {
+      path: '/love-timing',
+      name: 'love-timing',
+      component: LoveTimingInputPage
+    },
+    {
+      path: '/love-timing/result/:id',
+      name: 'love-timing-result',
+      component: LoveTimingResultPage,
       props: true
     }
   ]
