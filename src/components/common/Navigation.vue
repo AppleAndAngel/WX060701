@@ -7,10 +7,11 @@ const router = useRouter()
 const isOpen = ref(false)
 
 const navItems = [
-  { path: '/', label: '入口', symbol: '☽' },
-  { path: '/ritual', label: '占卜', symbol: '✧' },
-  { path: '/archive', label: '档案', symbol: '☰' }
-]
+    { path: '/', label: '入口', symbol: '☽' },
+    { path: '/ritual', label: '占卜', symbol: '✧' },
+    { path: '/synastry', label: '合盘', symbol: '∞' },
+    { path: '/archive', label: '档案', symbol: '☰' }
+  ]
 
 const currentIndex = computed(() => {
   return navItems.findIndex(item => item.path === route.path)

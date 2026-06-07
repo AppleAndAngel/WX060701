@@ -74,3 +74,71 @@ export interface StarPoint {
 }
 
 export type RitualPhase = 'input' | 'runes' | 'stars' | 'calculating' | 'complete'
+
+export interface PersonInfo {
+  name: string
+  birthDate: string
+}
+
+export interface SynastryInput {
+  personA: PersonInfo
+  personB: PersonInfo
+  relationshipType: string
+  timestamp: number
+}
+
+export interface NumberCompatibility {
+  numberA: number
+  numberB: number
+  score: number
+  description: string
+}
+
+export interface AttractionPoint {
+  aspect: string
+  intensity: number
+  description: string
+  advice: string
+}
+
+export interface ConflictPoint {
+  aspect: string
+  severity: number
+  description: string
+  resolution: string
+}
+
+export interface RhythmPattern {
+  name: string
+  frequency: number
+  description: string
+  bestPeriod: string
+  challengePeriod: string
+}
+
+export interface SynastryInterpretation {
+  title: string
+  overallScore: number
+  overallDescription: string
+  attraction: AttractionPoint[]
+  conflicts: ConflictPoint[]
+  rhythm: RhythmPattern[]
+  advice: string[]
+  keywords: string[]
+}
+
+export interface SynastryResult {
+  id: string
+  type: 'synastry'
+  input: SynastryInput
+  personANumbers: CoreNumbers
+  personBNumbers: CoreNumbers
+  compatibilityMatrix: NumberCompatibility[]
+  geometry: GeometryData
+  starMap: StarMap
+  interpretation: SynastryInterpretation
+  calculationTrace: CalculationStep[]
+  createdAt: number
+}
+
+export type ArchiveRecord = DivinationResult | SynastryResult

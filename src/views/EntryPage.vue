@@ -14,6 +14,10 @@ const startDivination = () => {
   router.push('/ritual')
 }
 
+const goToSynastry = () => {
+  router.push('/synastry')
+}
+
 const goToArchive = () => {
   router.push('/archive')
 }
@@ -80,25 +84,35 @@ onMounted(() => {
         enter-to-class="opacity-100 translate-y-0"
       >
         <div v-if="showButton" class="space-y-6">
-          <div class="flex flex-col sm:flex-row items-center justify-center gap-4">
-            <MysticButton
-              size="lg"
-              variant="primary"
-              @click="startDivination"
-            >
-              <span class="text-xl">✧</span>
-              开始占卜
-              <span class="text-xl">✧</span>
-            </MysticButton>
-            
-            <MysticButton
-              size="lg"
-              variant="secondary"
-              @click="goToArchive"
-            >
-              ☰ 查看档案
-            </MysticButton>
-          </div>
+            <div class="flex flex-col sm:flex-row items-center justify-center gap-4">
+              <MysticButton
+                size="lg"
+                variant="primary"
+                @click="startDivination"
+              >
+                <span class="text-xl">✧</span>
+                个人占卜
+                <span class="text-xl">✧</span>
+              </MysticButton>
+              
+              <MysticButton
+                size="lg"
+                variant="secondary"
+                @click="goToSynastry"
+              >
+                <span class="text-xl">∞</span>
+                双人合盘
+                <span class="text-xl">∞</span>
+              </MysticButton>
+              
+              <MysticButton
+                size="lg"
+                variant="ghost"
+                @click="goToArchive"
+              >
+                ☰ 查看档案
+              </MysticButton>
+            </div>
           
           <div class="mt-16 pt-8 border-t border-silver/20">
             <p class="font-mono text-xs text-silver/70 tracking-wider">

@@ -1,18 +1,36 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
-import { getAllRecords, deleteRecord, clearAllRecords } from '@/utils/storage'
-import type { DivinationResult } from '@/types'
+import { getAllArchiveRecords, deleteArchiveRecord, clearAllArchiveRecords } from '@/utils/storage'
+import type { ArchiveRecord, DivinationResult, SynastryResult } from '@/types'
 
 export const useArchiveStore = defineStore('archive', () => {
-  const records = ref<DivinationResult[]>([])
+  const records = ref<ArchiveRecord[]>([])
   const isLoading = ref(false)
 
   const recordCount = computed(() => records.value.length)
+  const divinationCount = computed(() => records.value.filter(r => !('type' in r) || r.type !== 'synastry').length)
+  const synastryCount = computed(() => records.value.filter(r => 'type' in r && r.type === 'synastry').length)
+
+  const isSynastryRecord = (r: ArchiveRecord): r is SynastryResult => {
+    return 'type' in r && r.type === 'synastry'
+  }
+
+  const isDivinationRecord = (r: ArchiveRecord): r is DivinationResult => {
+    return !('type' in r) || r.type !== 'synastry'
+  }
 
   const numberStats = computed(() => {
     const stats: Record<number, number> = {}
     records.value.forEach(r => {
-      const nums = [r.coreNumbers.lifePath, r.coreNumbers.destiny, r.coreNumbers.soul, r.coreNumbers.personality]
+      let nums: number[] = []
+      if (isDivinationRecord(r)) {
+        nums = [r.coreNumbers.lifePath, r.coreNumbers.destiny, r.coreNumbers.soul, r.coreNumbers.personality]
+      } else if (isSynastryRecord(r)) {
+        nums = [
+          r.personANumbers.lifePath, r.personANumbers.destiny, r.personANumbers.soul, r.personANumbers.personality,
+          r.personBNumbers.lifePath, r.personBNumbers.destiny, r.personBNumbers.soul, r.personBNumbers.personality
+        ]
+      }
       nums.forEach(n => {
         stats[n] = (stats[n] || 0) + 1
       })
@@ -28,19 +46,30 @@ export const useArchiveStore = defineStore('archive', () => {
     return stats
   })
 
+  const relationshipStats = computed(() => {
+    const stats: Record<string, number> = {}
+    records.value.forEach(r => {
+      if (isSynastryRecord(r)) {
+        const type = r.input.relationshipType
+        stats[type] = (stats[type] || 0) + 1
+      }
+    })
+    return stats
+  })
+
   const loadRecords = () => {
     isLoading.value = true
-    records.value = getAllRecords()
+    records.value = getAllArchiveRecords()
     isLoading.value = false
   }
 
   const removeRecord = (id: string) => {
-    deleteRecord(id)
+    deleteArchiveRecord(id)
     records.value = records.value.filter(r => r.id !== id)
   }
 
   const clearAll = () => {
-    clearAllRecords()
+    clearAllArchiveRecords()
     records.value = []
   }
 
@@ -60,8 +89,13 @@ export const useArchiveStore = defineStore('archive', () => {
     records,
     isLoading,
     recordCount,
+    divinationCount,
+    synastryCount,
     numberStats,
     geometryStats,
+    relationshipStats,
+    isSynastryRecord,
+    isDivinationRecord,
     loadRecords,
     removeRecord,
     clearAll,

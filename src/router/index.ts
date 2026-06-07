@@ -3,6 +3,8 @@ import EntryPage from '@/views/EntryPage.vue'
 import RitualPage from '@/views/RitualPage.vue'
 import ResultPage from '@/views/ResultPage.vue'
 import ArchivePage from '@/views/ArchivePage.vue'
+import SynastryInputPage from '@/views/SynastryInputPage.vue'
+import SynastryResultPage from '@/views/SynastryResultPage.vue'
 
 const router = createRouter({
   history: createWebHistory(),
@@ -27,6 +29,17 @@ const router = createRouter({
       path: '/archive',
       name: 'archive',
       component: ArchivePage
+    },
+    {
+      path: '/synastry',
+      name: 'synastry',
+      component: SynastryInputPage
+    },
+    {
+      path: '/synastry/result/:id',
+      name: 'synastry-result',
+      component: SynastryResultPage,
+      props: true
     }
   ]
 })

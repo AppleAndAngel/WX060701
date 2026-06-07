@@ -3,12 +3,13 @@ import { ref, onMounted, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { useArchiveStore } from '@/stores/archive'
 import MysticButton from '@/components/common/MysticButton.vue'
-import type { DivinationResult } from '@/types'
+import type { DivinationResult, SynastryResult } from '@/types'
 
 const router = useRouter()
 const archiveStore = useArchiveStore()
 const isLoading = ref(true)
 const showConfirmClear = ref(false)
+const activeFilter = ref<'all' | 'divination' | 'synastry'>('all')
 
 onMounted(() => {
   archiveStore.loadRecords()
@@ -41,8 +42,26 @@ const getGeometryName = (type: string): string => {
   return names[type] || type
 }
 
-const viewResult = (id: string) => {
-  router.push(`/result/${id}`)
+const filteredRecords = computed(() => {
+  if (activeFilter.value === 'divination') {
+    return archiveStore.records.filter(r => archiveStore.isDivinationRecord(r))
+  }
+  if (activeFilter.value === 'synastry') {
+    return archiveStore.records.filter(r => archiveStore.isSynastryRecord(r))
+  }
+  return archiveStore.records
+})
+
+const isSynastryRecord = (record: DivinationResult | SynastryResult): record is SynastryResult => {
+  return archiveStore.isSynastryRecord(record)
+}
+
+const viewResult = (record: DivinationResult | SynastryResult) => {
+  if (isSynastryRecord(record)) {
+    router.push(`/synastry/result/${record.id}`)
+  } else {
+    router.push(`/result/${record.id}`)
+  }
 }
 
 const deleteRecord = (e: Event, id: string) => {
@@ -113,7 +132,7 @@ const maxCount = computed(() => {
       </div>
       
       <template v-else>
-        <div class="grid md:grid-cols-2 gap-6 mb-12">
+        <div class="grid md:grid-cols-3 gap-6 mb-12">
           <div class="p-6 rounded-xl bg-glass">
             <h3 class="font-display text-xl text-gold mb-6 tracking-wider">
               数字频率
@@ -164,24 +183,84 @@ const maxCount = computed(() => {
                 </span>
               </div>
             </div>
-            
-            <div class="mt-6 pt-6 border-t border-silver/20">
+          </div>
+          
+          <div class="p-6 rounded-xl bg-glass">
+            <h3 class="font-display text-xl text-gold mb-6 tracking-wider">
+              统计概览
+            </h3>
+            <div class="space-y-4">
               <div class="flex justify-between items-center">
-                <span class="text-silver/70 text-sm">总占卜次数</span>
+                <span class="text-silver/70 text-sm">总记录数</span>
                 <span class="font-display text-2xl text-gold">{{ archiveStore.recordCount }}</span>
               </div>
-              <div v-if="archiveStore.getMostFrequentNumber() !== null" class="flex justify-between items-center mt-2">
+              <div class="flex justify-between items-center">
+                <span class="text-silver/70 text-sm">个人占卜</span>
+                <span class="font-display text-xl text-gold">{{ archiveStore.divinationCount }}</span>
+              </div>
+              <div class="flex justify-between items-center">
+                <span class="text-silver/70 text-sm">双人合盘</span>
+                <span class="font-display text-xl text-purple">{{ archiveStore.synastryCount }}</span>
+              </div>
+              <div v-if="archiveStore.getMostFrequentNumber() !== null" class="flex justify-between items-center">
                 <span class="text-silver/70 text-sm">高频数字</span>
                 <span class="font-display text-2xl text-purple">{{ archiveStore.getMostFrequentNumber() }}</span>
+              </div>
+              <div class="pt-4 mt-4 border-t border-silver/20">
+                <h4 class="font-display text-sm text-gold mb-3">关系类型分布</h4>
+                <div class="space-y-2">
+                  <div
+                    v-for="(count, type) in archiveStore.relationshipStats"
+                    :key="type"
+                    class="flex items-center justify-between text-sm"
+                  >
+                    <span class="text-silver/70">{{ type }}</span>
+                    <span class="font-mono text-purple">{{ count }}</span>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
         </div>
         
-        <div class="flex items-center justify-between mb-6">
-          <h3 class="font-display text-xl text-gold tracking-wider">
-            历史记录
-          </h3>
+        <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6">
+          <div class="flex items-center gap-4">
+            <h3 class="font-display text-xl text-gold tracking-wider">
+              历史记录
+            </h3>
+            <div class="flex gap-2">
+              <button
+                @click="activeFilter = 'all'"
+                class="px-3 py-1 rounded-full text-xs font-mono transition-all duration-300"
+                :class="{
+                  'bg-gold/20 text-gold border border-gold/30': activeFilter === 'all',
+                  'bg-silver/10 text-silver/60 border border-silver/20 hover:border-gold/30': activeFilter !== 'all'
+                }"
+              >
+                全部 ({{ archiveStore.recordCount }})
+              </button>
+              <button
+                @click="activeFilter = 'divination'"
+                class="px-3 py-1 rounded-full text-xs font-mono transition-all duration-300"
+                :class="{
+                  'bg-gold/20 text-gold border border-gold/30': activeFilter === 'divination',
+                  'bg-silver/10 text-silver/60 border border-silver/20 hover:border-gold/30': activeFilter !== 'divination'
+                }"
+              >
+                占卜 ({{ archiveStore.divinationCount }})
+              </button>
+              <button
+                @click="activeFilter = 'synastry'"
+                class="px-3 py-1 rounded-full text-xs font-mono transition-all duration-300"
+                :class="{
+                  'bg-purple/20 text-purple border border-purple/30': activeFilter === 'synastry',
+                  'bg-silver/10 text-silver/60 border border-silver/20 hover:border-purple/30': activeFilter !== 'synastry'
+                }"
+              >
+                合盘 ({{ archiveStore.synastryCount }})
+              </button>
+            </div>
+          </div>
           <button
             @click="confirmClearAll"
             class="text-sm font-mono text-silver/60 hover:text-mystic-red transition-colors duration-300"
@@ -190,18 +269,32 @@ const maxCount = computed(() => {
           </button>
         </div>
         
-        <div class="space-y-4">
+        <div v-if="filteredRecords.length === 0" class="text-center py-12">
+          <p class="font-body text-silver/50">暂无该类型的记录</p>
+        </div>
+        
+        <div v-else class="space-y-4">
           <div
-            v-for="record in archiveStore.records"
+            v-for="record in filteredRecords"
             :key="record.id"
-            @click="viewResult(record.id)"
+            @click="viewResult(record)"
             class="group p-6 rounded-xl bg-glass hover:bg-glass/80 cursor-pointer transition-all duration-300 hover:border-gold/30 border border-transparent"
+            :class="{ 'border-l-4 border-l-purple': isSynastryRecord(record) }"
           >
             <div class="flex items-start justify-between gap-4">
               <div class="flex-1">
-                <div class="flex items-center gap-3 mb-2">
+                <div class="flex items-center gap-3 mb-2 flex-wrap">
                   <span class="font-display text-xl text-gold">
                     {{ record.interpretation.title }}
+                  </span>
+                  <span
+                    v-if="isSynastryRecord(record)"
+                    class="px-2 py-0.5 rounded bg-purple/20 text-purple text-xs font-mono"
+                  >
+                    合盘 · {{ (record as SynastryResult).input.relationshipType }}
+                  </span>
+                  <span v-else class="px-2 py-0.5 rounded bg-gold/20 text-gold text-xs font-mono">
+                    占卜
                   </span>
                   <span class="text-xs font-mono text-silver/60">
                     {{ formatDate(record.createdAt) }}
@@ -209,12 +302,26 @@ const maxCount = computed(() => {
                 </div>
                 
                 <div class="flex flex-wrap gap-2 mb-3">
-                  <span class="px-2 py-0.5 rounded bg-gold/10 text-gold/80 text-xs font-mono">
-                    {{ record.input.name }}
-                  </span>
-                  <span class="px-2 py-0.5 rounded bg-gold/10 text-gold/80 text-xs font-mono">
-                    {{ getGeometryName(record.geometry.type) }}
-                  </span>
+                  <template v-if="isSynastryRecord(record)">
+                    <span class="px-2 py-0.5 rounded bg-gold/10 text-gold/80 text-xs font-mono">
+                      {{ (record as SynastryResult).input.personA.name }}
+                    </span>
+                    <span class="text-silver/50">×</span>
+                    <span class="px-2 py-0.5 rounded bg-purple/10 text-purple/80 text-xs font-mono">
+                      {{ (record as SynastryResult).input.personB.name }}
+                    </span>
+                    <span class="px-2 py-0.5 rounded bg-gold/10 text-gold/80 text-xs font-mono">
+                      {{ getGeometryName(record.geometry.type) }}
+                    </span>
+                  </template>
+                  <template v-else>
+                    <span class="px-2 py-0.5 rounded bg-gold/10 text-gold/80 text-xs font-mono">
+                      {{ record.input.name }}
+                    </span>
+                    <span class="px-2 py-0.5 rounded bg-gold/10 text-gold/80 text-xs font-mono">
+                      {{ getGeometryName(record.geometry.type) }}
+                    </span>
+                  </template>
                   <span
                     v-for="kw in record.interpretation.keywords.slice(0, 3)"
                     :key="kw"
@@ -225,30 +332,64 @@ const maxCount = computed(() => {
                 </div>
                 
                 <p class="font-body text-silver/70 text-sm line-clamp-2">
-                  {{ record.interpretation.paragraphs[0] }}
+                  <template v-if="isSynastryRecord(record)">
+                    {{ (record as SynastryResult).interpretation.overallDescription }}
+                  </template>
+                  <template v-else>
+                    {{ record.interpretation.paragraphs[0] }}
+                  </template>
                 </p>
                 
-                <div class="flex items-center gap-4 mt-4">
-                  <div class="flex items-center gap-2">
-                    <span class="w-6 h-6 rounded-full bg-gold/20 flex items-center justify-center text-xs font-display text-gold">
-                      {{ record.coreNumbers.lifePath }}
-                    </span>
-                    <span class="w-6 h-6 rounded-full bg-gold/20 flex items-center justify-center text-xs font-display text-gold">
-                      {{ record.coreNumbers.destiny }}
-                    </span>
-                    <span class="w-6 h-6 rounded-full bg-purple/20 flex items-center justify-center text-xs font-display text-purple">
-                      {{ record.coreNumbers.soul }}
-                    </span>
-                    <span class="w-6 h-6 rounded-full bg-purple/20 flex items-center justify-center text-xs font-display text-purple">
-                      {{ record.coreNumbers.personality }}
-                    </span>
-                  </div>
+                <div class="flex items-center gap-4 mt-4 flex-wrap">
+                  <template v-if="isSynastryRecord(record)">
+                    <div class="flex items-center gap-2">
+                      <span class="text-xs text-silver/60 font-mono">{{ (record as SynastryResult).input.personA.name }}</span>
+                      <span class="w-6 h-6 rounded-full bg-gold/20 flex items-center justify-center text-xs font-display text-gold">
+                        {{ (record as SynastryResult).personANumbers.lifePath }}
+                      </span>
+                      <span class="w-6 h-6 rounded-full bg-purple/20 flex items-center justify-center text-xs font-display text-purple">
+                        {{ (record as SynastryResult).personANumbers.soul }}
+                      </span>
+                    </div>
+                    <span class="text-silver/40">×</span>
+                    <div class="flex items-center gap-2">
+                      <span class="text-xs text-silver/60 font-mono">{{ (record as SynastryResult).input.personB.name }}</span>
+                      <span class="w-6 h-6 rounded-full bg-gold/20 flex items-center justify-center text-xs font-display text-gold">
+                        {{ (record as SynastryResult).personBNumbers.lifePath }}
+                      </span>
+                      <span class="w-6 h-6 rounded-full bg-purple/20 flex items-center justify-center text-xs font-display text-purple">
+                        {{ (record as SynastryResult).personBNumbers.soul }}
+                      </span>
+                    </div>
+                    <div class="ml-auto flex items-center gap-1">
+                      <span class="text-xs text-silver/60 font-mono">匹配度</span>
+                      <span class="font-display text-lg text-gold">
+                        {{ (record as SynastryResult).interpretation.overallScore }}
+                      </span>
+                    </div>
+                  </template>
+                  <template v-else>
+                    <div class="flex items-center gap-2">
+                      <span class="w-6 h-6 rounded-full bg-gold/20 flex items-center justify-center text-xs font-display text-gold">
+                        {{ record.coreNumbers.lifePath }}
+                      </span>
+                      <span class="w-6 h-6 rounded-full bg-gold/20 flex items-center justify-center text-xs font-display text-gold">
+                        {{ record.coreNumbers.destiny }}
+                      </span>
+                      <span class="w-6 h-6 rounded-full bg-purple/20 flex items-center justify-center text-xs font-display text-purple">
+                        {{ record.coreNumbers.soul }}
+                      </span>
+                      <span class="w-6 h-6 rounded-full bg-purple/20 flex items-center justify-center text-xs font-display text-purple">
+                        {{ record.coreNumbers.personality }}
+                      </span>
+                    </div>
+                  </template>
                 </div>
               </div>
               
               <button
                 @click="deleteRecord($event, record.id)"
-                class="p-2 text-silver/50 hover:text-mystic-red transition-colors duration-300 opacity-0 group-hover:opacity-100"
+                class="p-2 text-silver/50 hover:text-mystic-red transition-colors duration-300 opacity-0 group-hover:opacity-100 flex-shrink-0"
               >
                 ✕
               </button>
