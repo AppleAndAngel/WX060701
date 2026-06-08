@@ -4,8 +4,11 @@ import { useRoute, useRouter } from 'vue-router'
 import { useYearlyStore } from '@/stores/yearly'
 import GeometryChart from '@/components/result/GeometryChart.vue'
 import CalculationTrace from '@/components/result/CalculationTrace.vue'
+import ShareCardModal from '@/components/result/ShareCardModal.vue'
 import MysticButton from '@/components/common/MysticButton.vue'
 import { yearNumberMeanings } from '@/algorithms/yearly'
+import { generateShareCard } from '@/utils/shareCard'
+import type { ShareCardData } from '@/utils/shareCard'
 
 const route = useRoute()
 const router = useRouter()
@@ -14,8 +17,21 @@ const activeTab = ref<'overview' | 'phases' | 'months' | 'trace'>('overview')
 const expandedMonth = ref<number | null>(null)
 const isLoading = ref(true)
 const notFound = ref(false)
+const showShareModal = ref(false)
+const shareCardData = ref<ShareCardData | null>(null)
 
 const result = computed(() => store.currentResult)
+
+const openShareModal = () => {
+  if (result.value) {
+    shareCardData.value = generateShareCard(result.value)
+    showShareModal.value = true
+  }
+}
+
+const closeShareModal = () => {
+  showShareModal.value = false
+}
 
 const yearMeaning = computed(() => {
   if (!result.value) return null
@@ -622,6 +638,9 @@ const scrollToTop = () => {
             <MysticButton @click="newDivination">
               ✦ 新的流年占卜
             </MysticButton>
+            <MysticButton variant="secondary" @click="openShareModal">
+              ✧ 生成分享卡
+            </MysticButton>
             <MysticButton variant="secondary" @click="goBack">
               ← 返回输入
             </MysticButton>
@@ -641,5 +660,11 @@ const scrollToTop = () => {
         </div>
       </div>
     </template>
+
+    <ShareCardModal
+      :show="showShareModal"
+      :card-data="shareCardData"
+      @close="closeShareModal"
+    />
   </div>
 </template>

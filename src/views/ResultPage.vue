@@ -7,7 +7,7 @@ import InterpretationText from '@/components/result/InterpretationText.vue'
 import CalculationTrace from '@/components/result/CalculationTrace.vue'
 import ShareCardModal from '@/components/result/ShareCardModal.vue'
 import MysticButton from '@/components/common/MysticButton.vue'
-import { generateDivinationShareCard } from '@/utils/shareCard'
+import { generateShareCard } from '@/utils/shareCard'
 import type { ShareCardData } from '@/utils/shareCard'
 
 const route = useRoute()
@@ -23,7 +23,7 @@ const result = computed(() => store.currentResult)
 
 const openShareModal = () => {
   if (result.value) {
-    shareCardData.value = generateDivinationShareCard(result.value)
+    shareCardData.value = generateShareCard(result.value)
     showShareModal.value = true
   }
 }

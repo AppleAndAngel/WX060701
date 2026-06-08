@@ -3,13 +3,29 @@ import { ref, onMounted, computed, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { useDailyRitualStore } from '@/stores/dailyRitual'
 import MysticButton from '@/components/common/MysticButton.vue'
+import ShareCardModal from '@/components/result/ShareCardModal.vue'
 import { useDivinationStore } from '@/stores/divination'
 import { getCategoryLanguage } from '@/algorithms/questionCategory'
+import { generateShareCard } from '@/utils/shareCard'
+import type { ShareCardData } from '@/utils/shareCard'
 
 const router = useRouter()
 const store = useDailyRitualStore()
 const divinationStore = useDivinationStore()
 const showContent = ref(false)
+const showShareModal = ref(false)
+const shareCardData = ref<ShareCardData | null>(null)
+
+const openShareModal = () => {
+  if (store.currentResult) {
+    shareCardData.value = generateShareCard(store.currentResult)
+    showShareModal.value = true
+  }
+}
+
+const closeShareModal = () => {
+  showShareModal.value = false
+}
 
 const phases = [
   { key: 'intro', label: '开始', icon: '☀' },
@@ -600,6 +616,9 @@ const selectedRuneInfo = computed(() => {
             <MysticButton variant="primary" @click="goToArchive">
               查看完整能量轨迹 ✧
             </MysticButton>
+            <MysticButton variant="secondary" @click="openShareModal">
+              ✧ 生成分享卡
+            </MysticButton>
             <MysticButton variant="secondary" @click="() => router.push('/')">
               返回首页
             </MysticButton>
@@ -607,5 +626,11 @@ const selectedRuneInfo = computed(() => {
         </div>
       </transition>
     </div>
+
+    <ShareCardModal
+      :show="showShareModal"
+      :card-data="shareCardData"
+      @close="closeShareModal"
+    />
   </div>
 </template>

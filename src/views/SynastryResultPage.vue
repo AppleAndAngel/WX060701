@@ -6,7 +6,7 @@ import GeometryChart from '@/components/result/GeometryChart.vue'
 import CalculationTrace from '@/components/result/CalculationTrace.vue'
 import ShareCardModal from '@/components/result/ShareCardModal.vue'
 import MysticButton from '@/components/common/MysticButton.vue'
-import { generateSynastryShareCard } from '@/utils/shareCard'
+import { generateShareCard } from '@/utils/shareCard'
 import type { ShareCardData } from '@/utils/shareCard'
 import type { NumberCompatibility } from '@/types'
 
@@ -23,7 +23,7 @@ const result = computed(() => store.currentResult)
 
 const openShareModal = () => {
   if (result.value) {
-    shareCardData.value = generateSynastryShareCard(result.value)
+    shareCardData.value = generateShareCard(result.value)
     showShareModal.value = true
   }
 }

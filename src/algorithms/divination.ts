@@ -44,6 +44,7 @@ export const performDivination = (input: DivinationInput): DivinationResult => {
   
   return {
     id: generateId(),
+    type: 'divination',
     input,
     coreNumbers,
     matrix: transformedMatrix,

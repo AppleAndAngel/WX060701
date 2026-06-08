@@ -401,7 +401,7 @@ const generateActionWindows = (
   }
 
   return windows.sort((a, b) => {
-    const order = { optimal: 0, good: 1, challenging: 2 }
+    const order: Record<string, number> = { optimal: 0, good: 1, challenging: 2 }
     return order[a.type] - order[b.type]
   })
 }

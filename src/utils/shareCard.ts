@@ -1,4 +1,22 @@
-import type { CoreNumbers, DivinationResult, SynastryResult } from '@/types'
+import type { 
+  CoreNumbers, 
+  DivinationResult, 
+  SynastryResult,
+  YearlyResult,
+  CareerChoiceResult,
+  LoveTimingResult,
+  DailyRitualResult,
+  DreamInterpretationResult
+} from '@/types'
+
+export type ShareableResult = 
+  | DivinationResult 
+  | SynastryResult 
+  | YearlyResult 
+  | CareerChoiceResult 
+  | LoveTimingResult 
+  | DailyRitualResult 
+  | DreamInterpretationResult
 
 export interface ShareCardData {
   cardTitle: string
@@ -10,7 +28,7 @@ export interface ShareCardData {
     label: string
     value: string | number
   }
-  type: 'divination' | 'synastry'
+  type: ShareableResult['type']
 }
 
 const geometryNames: Record<string, string> = {
@@ -22,7 +40,8 @@ const geometryNames: Record<string, string> = {
   octagon: '八方向导',
   star: '星光圣殿',
   dodecagon: '十二宫轮',
-  enneagram: '九型迷宫'
+  enneagram: '九型迷宫',
+  circle: '圆满之环'
 }
 
 export function generateDivinationShareCard(result: DivinationResult): ShareCardData {
@@ -87,6 +106,191 @@ export function generateSynastryShareCard(result: SynastryResult): ShareCardData
       value: `${score}分`
     },
     type: 'synastry'
+  }
+}
+
+export function generateYearlyShareCard(result: YearlyResult): ShareCardData {
+  const { lifePathNumber, yearNumber, geometry, interpretation } = result
+
+  const chartName = geometryNames[geometry.type] || geometry.type
+
+  const coreNumbers: CoreNumbers = {
+    lifePath: lifePathNumber,
+    destiny: yearNumber,
+    soul: interpretation.months[0]?.monthNumber || yearNumber,
+    personality: interpretation.months[5]?.monthNumber || lifePathNumber
+  }
+
+  const targetYear = result.input.targetYear
+  const theme = interpretation.theme
+
+  const summaryTemplates = [
+    `${targetYear}流年 · 数字${yearNumber} · ${theme}。生命路径${lifePathNumber}与流年数字${yearNumber}共振，开启独特的成长通道。`,
+    `${targetYear}年是你的${theme}之年。流年数字${yearNumber}引导能量流动，生命路径${lifePathNumber}奠定本质基调。`,
+    `数字${yearNumber}主导${targetYear}流年 · ${theme}。与生命路径${lifePathNumber}的对话，将塑造这一年的生命节奏。`
+  ]
+
+  const seed = (lifePathNumber + yearNumber + targetYear) % summaryTemplates.length
+
+  return {
+    cardTitle: interpretation.title,
+    chartName,
+    coreNumbers,
+    summary: summaryTemplates[seed],
+    keywords: interpretation.coreKeywords,
+    secondaryInfo: {
+      label: '流年数字',
+      value: yearNumber
+    },
+    type: 'yearly'
+  }
+}
+
+export function generateCareerChoiceShareCard(result: CareerChoiceResult): ShareCardData {
+  const { interpretation, geometry } = result
+
+  const chartName = geometryNames[geometry.type] || geometry.type
+
+  const avgA = Math.round(interpretation.comparisons.reduce((sum, c) => sum + c.optionAScore, 0) / interpretation.comparisons.length)
+  const avgB = Math.round(interpretation.comparisons.reduce((sum, c) => sum + c.optionBScore, 0) / interpretation.comparisons.length)
+
+  const betterOption = avgA >= avgB ? interpretation.pathA : interpretation.pathB
+  const worseOption = avgA >= avgB ? interpretation.pathB : interpretation.pathA
+
+  const coreNumbers = betterOption.coreNumbers
+
+  const summary = `${interpretation.pathA.optionName}(${avgA}分) vs ${interpretation.pathB.optionName}(${avgB}分)。算法更倾向「${betterOption.optionName}」，${interpretation.finalRecommendation.slice(0, 50)}...`
+
+  return {
+    cardTitle: interpretation.title,
+    chartName,
+    coreNumbers,
+    summary,
+    keywords: interpretation.keywords,
+    secondaryInfo: {
+      label: '推荐选择',
+      value: betterOption.optionName
+    },
+    type: 'career-choice'
+  }
+}
+
+export function generateLoveTimingShareCard(result: LoveTimingResult): ShareCardData {
+  const { interpretation, geometry, yourNumbers } = result
+
+  const chartName = geometryNames[geometry.type] || geometry.type
+
+  const scenarioNames: Record<string, string> = {
+    progression: '关系推进',
+    reconciliation: '复合时机',
+    confession: '表白时机'
+  }
+
+  const coreNumbers = yourNumbers
+
+  const scenario = interpretation.scenario || 'relationship'
+  const summary = `${scenarioNames[scenario] || '爱情时机'} · 综合指数${interpretation.overallScore}分。${interpretation.overallDescription.slice(0, 60)}...`
+
+  const topStage = interpretation.stages.reduce((max, s) => s.energy > max.energy ? s : max, interpretation.stages[0])
+
+  return {
+    cardTitle: interpretation.title,
+    chartName,
+    coreNumbers,
+    summary,
+    keywords: interpretation.keywords,
+    secondaryInfo: {
+      label: '最佳阶段',
+      value: `${topStage.name}·${topStage.energy}%`
+    },
+    type: 'love-timing'
+  }
+}
+
+export function generateDailyRitualShareCard(result: DailyRitualResult): ShareCardData {
+  const { dailyNumber, energyLevel, geometry, interpretation } = result
+
+  const chartName = geometryNames[geometry.type] || geometry.type
+
+  const categoryLabels: Record<string, string> = {
+    love: '感情',
+    career: '事业',
+    wealth: '财富',
+    'self-growth': '成长'
+  }
+
+  const category = result.input.questionCategory
+  const categoryLabel = category ? categoryLabels[category] : '今日'
+
+  const coreNumbers: CoreNumbers = {
+    lifePath: dailyNumber,
+    destiny: energyLevel > 80 ? 1 : energyLevel > 50 ? 5 : 9,
+    soul: dailyNumber === 11 || dailyNumber === 22 ? dailyNumber : ((dailyNumber + 7) % 9) || 9,
+    personality: ((dailyNumber + 3) % 9) || 9
+  }
+
+  const date = new Date(result.input.timestamp)
+  const dateStr = `${date.getFullYear()}年${date.getMonth() + 1}月${date.getDate()}日`
+
+  const summary = `${dateStr} · ${categoryLabel}日签 · 每日数字${dailyNumber} · 能量指数${energyLevel}%。${interpretation.paragraphs[0]?.slice(0, 50) || ''}...`
+
+  return {
+    cardTitle: interpretation.title,
+    chartName,
+    coreNumbers,
+    summary,
+    keywords: interpretation.keywords,
+    secondaryInfo: {
+      label: '每日能量',
+      value: `${energyLevel}%`
+    },
+    type: 'daily-ritual'
+  }
+}
+
+export function generateDreamInterpretationShareCard(result: DreamInterpretationResult): ShareCardData {
+  const { dreamNumber, coreNumbers, geometry, interpretation } = result
+
+  const chartName = geometryNames[geometry.type] || geometry.type
+
+  const topEmotion = interpretation.emotions.reduce((max, e) => e.intensity > max.intensity ? e : max, interpretation.emotions[0])
+  const topSymbol = interpretation.symbols[0]
+
+  const coreMessage = interpretation.coreMessage || interpretation.overallTheme || ''
+  const summary = `梦境数字${dreamNumber} · 核心情绪「${topEmotion?.name}」。${coreMessage.slice(0, 60)}...`
+
+  return {
+    cardTitle: interpretation.title,
+    chartName,
+    coreNumbers,
+    summary,
+    keywords: interpretation.keywords,
+    secondaryInfo: {
+      label: '梦境数字',
+      value: dreamNumber
+    },
+    type: 'dream-interpretation'
+  }
+}
+
+export function generateShareCard(result: ShareableResult): ShareCardData {
+  switch (result.type) {
+    case 'divination':
+      return generateDivinationShareCard(result)
+    case 'synastry':
+      return generateSynastryShareCard(result)
+    case 'yearly':
+      return generateYearlyShareCard(result)
+    case 'career-choice':
+      return generateCareerChoiceShareCard(result)
+    case 'love-timing':
+      return generateLoveTimingShareCard(result)
+    case 'daily-ritual':
+      return generateDailyRitualShareCard(result)
+    case 'dream-interpretation':
+      return generateDreamInterpretationShareCard(result)
+    default:
+      throw new Error('不支持的结果类型')
   }
 }
 

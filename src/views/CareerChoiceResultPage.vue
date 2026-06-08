@@ -4,7 +4,10 @@ import { useRoute, useRouter } from 'vue-router'
 import { useCareerChoiceStore } from '@/stores/careerChoice'
 import GeometryChart from '@/components/result/GeometryChart.vue'
 import CalculationTrace from '@/components/result/CalculationTrace.vue'
+import ShareCardModal from '@/components/result/ShareCardModal.vue'
 import MysticButton from '@/components/common/MysticButton.vue'
+import { generateShareCard } from '@/utils/shareCard'
+import type { ShareCardData } from '@/utils/shareCard'
 import type { CareerChoiceComparison } from '@/types'
 
 const route = useRoute()
@@ -13,8 +16,21 @@ const store = useCareerChoiceStore()
 const activeTab = ref<'overview' | 'pathA' | 'pathB' | 'comparison' | 'action' | 'trace'>('overview')
 const isLoading = ref(true)
 const notFound = ref(false)
+const showShareModal = ref(false)
+const shareCardData = ref<ShareCardData | null>(null)
 
 const result = computed(() => store.currentResult)
+
+const openShareModal = () => {
+  if (result.value) {
+    shareCardData.value = generateShareCard(result.value)
+    showShareModal.value = true
+  }
+}
+
+const closeShareModal = () => {
+  showShareModal.value = false
+}
 
 onMounted(() => {
   const id = route.params.id as string
@@ -729,11 +745,20 @@ const goToArchive = () => {
           <MysticButton variant="primary" size="lg" @click="newCareerChoice">
             ⚖ 新的抉择
           </MysticButton>
+          <MysticButton variant="secondary" size="lg" @click="openShareModal">
+            ✧ 生成分享卡
+          </MysticButton>
           <MysticButton variant="secondary" size="lg" @click="goToArchive">
             ☰ 查看档案
           </MysticButton>
         </div>
       </div>
     </template>
+
+    <ShareCardModal
+      :show="showShareModal"
+      :card-data="shareCardData"
+      @close="closeShareModal"
+    />
   </div>
 </template>
