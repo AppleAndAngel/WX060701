@@ -42,6 +42,10 @@ const goToArchive = () => {
   router.push('/archive')
 }
 
+const goToTimeCapsule = () => {
+  router.push('/time-capsule')
+}
+
 onMounted(() => {
   setTimeout(() => {
     showContent.value = true
@@ -173,6 +177,16 @@ onMounted(() => {
                 <span class="text-xl">☽</span>
                 梦境解读
                 <span class="text-xl">☽</span>
+              </MysticButton>
+              
+              <MysticButton
+                size="lg"
+                variant="primary"
+                @click="goToTimeCapsule"
+              >
+                <span class="text-xl">⏳</span>
+                时间胶囊
+                <span class="text-xl">⏳</span>
               </MysticButton>
               
               <MysticButton

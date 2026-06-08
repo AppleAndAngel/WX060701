@@ -3,14 +3,14 @@ import { ref, onMounted, computed, watch } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useArchiveStore } from '@/stores/archive'
 import MysticButton from '@/components/common/MysticButton.vue'
-import type { DivinationResult, SynastryResult, YearlyResult, CareerChoiceResult, LoveTimingResult, DailyRitualResult, DreamInterpretationResult } from '@/types'
+import type { DivinationResult, SynastryResult, YearlyResult, CareerChoiceResult, LoveTimingResult, DailyRitualResult, DreamInterpretationResult, TimeCapsuleResult } from '@/types'
 
 const router = useRouter()
 const route = useRoute()
 const archiveStore = useArchiveStore()
 const isLoading = ref(true)
 const showConfirmClear = ref(false)
-const activeFilter = ref<'all' | 'divination' | 'synastry' | 'yearly' | 'career-choice' | 'love-timing' | 'daily-ritual' | 'dream-interpretation'>('all')
+const activeFilter = ref<'all' | 'divination' | 'synastry' | 'yearly' | 'career-choice' | 'love-timing' | 'daily-ritual' | 'dream-interpretation' | 'time-capsule'>('all')
 
 const loadRecordsData = () => {
   isLoading.value = true
@@ -79,10 +79,13 @@ const filteredRecords = computed(() => {
   if (activeFilter.value === 'dream-interpretation') {
     return archiveStore.records.filter(r => archiveStore.isDreamInterpretationRecord(r))
   }
+  if (activeFilter.value === 'time-capsule') {
+    return archiveStore.records.filter(r => archiveStore.isTimeCapsuleRecord(r))
+  }
   return archiveStore.records
 })
 
-type ArchiveRecord = DivinationResult | SynastryResult | YearlyResult | CareerChoiceResult | LoveTimingResult | DailyRitualResult | DreamInterpretationResult
+type ArchiveRecord = DivinationResult | SynastryResult | YearlyResult | CareerChoiceResult | LoveTimingResult | DailyRitualResult | DreamInterpretationResult | TimeCapsuleResult
 
 const isSynastryRecord = (record: ArchiveRecord): record is SynastryResult => {
   return archiveStore.isSynastryRecord(record)
@@ -108,6 +111,10 @@ const isDreamInterpretationRecord = (record: ArchiveRecord): record is DreamInte
   return archiveStore.isDreamInterpretationRecord(record)
 }
 
+const isTimeCapsuleRecord = (record: ArchiveRecord): record is TimeCapsuleResult => {
+  return archiveStore.isTimeCapsuleRecord(record)
+}
+
 const viewResult = (record: ArchiveRecord) => {
   if (isSynastryRecord(record)) {
     router.push(`/synastry/result/${record.id}`)
@@ -121,6 +128,14 @@ const viewResult = (record: ArchiveRecord) => {
     router.push(`/daily-ritual`)
   } else if (isDreamInterpretationRecord(record)) {
     router.push(`/dream-interpretation/result/${record.id}`)
+  } else if (isTimeCapsuleRecord(record)) {
+    if (record.isUnlocked) {
+      router.push(`/time-capsule/view/${record.id}`)
+    } else if (Date.now() >= record.unlockAt) {
+      router.push(`/time-capsule/unlock/${record.id}`)
+    } else {
+      router.push(`/time-capsule/seal/${record.id}`)
+    }
   } else {
     router.push(`/result/${record.id}`)
   }
@@ -514,6 +529,16 @@ const maxCount = computed(() => {
               >
                 梦境 ({{ archiveStore.dreamInterpretationCount }})
               </button>
+              <button
+                @click="activeFilter = 'time-capsule'"
+                class="px-3 py-1 rounded-full text-xs font-mono transition-all duration-300"
+                :class="{
+                  'bg-amber-500/20 text-amber-400 border border-amber-500/30': activeFilter === 'time-capsule',
+                  'bg-silver/10 text-silver/60 border border-silver/20 hover:border-amber-500/30': activeFilter !== 'time-capsule'
+                }"
+              >
+                时间胶囊 ({{ archiveStore.timeCapsuleCount }})
+              </button>
             </div>
           </div>
           <button
@@ -540,14 +565,20 @@ const maxCount = computed(() => {
               'border-l-4 border-l-orange-400': isCareerChoiceRecord(record),
               'border-l-4 border-l-pink-400': isLoveTimingRecord(record),
               'border-l-4 border-l-emerald-400': isDailyRitualRecord(record),
-              'border-l-4 border-l-indigo-400': isDreamInterpretationRecord(record)
+              'border-l-4 border-l-indigo-400': isDreamInterpretationRecord(record),
+              'border-l-4 border-l-amber-400': isTimeCapsuleRecord(record)
             }"
           >
             <div class="flex items-start justify-between gap-4">
               <div class="flex-1">
                 <div class="flex items-center gap-3 mb-2 flex-wrap">
                   <span class="font-display text-xl text-gold">
-                    {{ record.interpretation.title }}
+                    <template v-if="isTimeCapsuleRecord(record)">
+                      时间胶囊 · {{ record.isUnlocked ? '已开启' : (Date.now() >= record.unlockAt ? '可解锁' : '封存中') }}
+                    </template>
+                    <template v-else>
+                      {{ record.interpretation.title }}
+                    </template>
                   </span>
                   <span
                     v-if="isSynastryRecord(record)"
@@ -584,6 +615,12 @@ const maxCount = computed(() => {
                     class="px-2 py-0.5 rounded bg-indigo-500/20 text-indigo-400 text-xs font-mono"
                   >
                     梦境 · 数字 {{ (record as DreamInterpretationResult).dreamNumber }}
+                  </span>
+                  <span
+                    v-else-if="isTimeCapsuleRecord(record)"
+                    class="px-2 py-0.5 rounded bg-amber-500/20 text-amber-400 text-xs font-mono"
+                  >
+                    ⏳ 时间胶囊
                   </span>
                   <span v-else class="px-2 py-0.5 rounded bg-gold/20 text-gold text-xs font-mono">
                     占卜
@@ -663,6 +700,17 @@ const maxCount = computed(() => {
                       {{ getGeometryName(record.geometry.type) }}
                     </span>
                   </template>
+                  <template v-else-if="isTimeCapsuleRecord(record)">
+                    <span class="px-2 py-0.5 rounded bg-gold/10 text-gold/80 text-xs font-mono">
+                      {{ (record as TimeCapsuleResult).input.name }}
+                    </span>
+                    <span class="px-2 py-0.5 rounded bg-amber-500/10 text-amber-400/80 text-xs font-mono">
+                      约定 {{ formatDate((record as TimeCapsuleResult).unlockAt) }}
+                    </span>
+                    <span class="px-2 py-0.5 rounded bg-gold/10 text-gold/80 text-xs font-mono">
+                      {{ getGeometryName(record.geometry.type) }}
+                    </span>
+                  </template>
                   <template v-else>
                     <span class="px-2 py-0.5 rounded bg-gold/10 text-gold/80 text-xs font-mono">
                       {{ record.input.name }}
@@ -677,7 +725,9 @@ const maxCount = computed(() => {
                         ? (record as DailyRitualResult).symbolKeywords 
                         : isYearlyRecord(record) 
                           ? record.interpretation.coreKeywords 
-                          : record.interpretation.keywords
+                          : isTimeCapsuleRecord(record)
+                            ? record.prediction.keyThemes
+                            : record.interpretation.keywords
                     ).slice(0, 3)"
                     :key="kw"
                     class="px-2 py-0.5 rounded bg-silver/10 text-silver/70 text-xs font-mono"
@@ -704,6 +754,14 @@ const maxCount = computed(() => {
                   </template>
                   <template v-else-if="isDreamInterpretationRecord(record)">
                     {{ (record as DreamInterpretationResult).interpretation.overallTheme }}
+                  </template>
+                  <template v-else-if="isTimeCapsuleRecord(record)">
+                    <template v-if="record.isUnlocked">
+                      {{ record.prediction.summary }}
+                    </template>
+                    <template v-else>
+                      问题：{{ record.input.question }}
+                    </template>
                   </template>
                   <template v-else>
                     {{ record.interpretation.paragraphs[0] }}

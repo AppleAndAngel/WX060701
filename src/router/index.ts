@@ -14,6 +14,11 @@ import LoveTimingResultPage from '@/views/LoveTimingResultPage.vue'
 import DailyRitualPage from '@/views/DailyRitualPage.vue'
 import DreamInterpretationInputPage from '@/views/DreamInterpretationInputPage.vue'
 import DreamInterpretationResultPage from '@/views/DreamInterpretationResultPage.vue'
+import TimeCapsulePage from '@/views/TimeCapsulePage.vue'
+import TimeCapsuleSealPage from '@/views/TimeCapsuleSealPage.vue'
+import TimeCapsuleListPage from '@/views/TimeCapsuleListPage.vue'
+import TimeCapsuleUnlockPage from '@/views/TimeCapsuleUnlockPage.vue'
+import TimeCapsuleViewPage from '@/views/TimeCapsuleViewPage.vue'
 
 const router = createRouter({
   history: createWebHistory(),
@@ -97,6 +102,34 @@ const router = createRouter({
       path: '/dream-interpretation/result/:id',
       name: 'dream-interpretation-result',
       component: DreamInterpretationResultPage,
+      props: true
+    },
+    {
+      path: '/time-capsule',
+      name: 'time-capsule',
+      component: TimeCapsulePage
+    },
+    {
+      path: '/time-capsule/seal/:id',
+      name: 'time-capsule-seal',
+      component: TimeCapsuleSealPage,
+      props: true
+    },
+    {
+      path: '/time-capsule/list',
+      name: 'time-capsule-list',
+      component: TimeCapsuleListPage
+    },
+    {
+      path: '/time-capsule/unlock/:id',
+      name: 'time-capsule-unlock',
+      component: TimeCapsuleUnlockPage,
+      props: true
+    },
+    {
+      path: '/time-capsule/view/:id',
+      name: 'time-capsule-view',
+      component: TimeCapsuleViewPage,
       props: true
     }
   ]

@@ -1,4 +1,4 @@
-import type { DivinationResult, SynastryResult, ArchiveRecord, YearlyResult, CareerChoiceResult, LoveTimingResult, DailyRitualResult, DreamInterpretationResult } from '@/types'
+import type { DivinationResult, SynastryResult, ArchiveRecord, YearlyResult, CareerChoiceResult, LoveTimingResult, DailyRitualResult, DreamInterpretationResult, TimeCapsuleResult } from '@/types'
 import { simpleEncrypt, simpleDecrypt } from './hash'
 
 const STORAGE_KEY = 'divination_archive'
@@ -8,6 +8,7 @@ const CAREER_CHOICE_STORAGE_KEY = 'career_choice_archive'
 const LOVE_TIMING_STORAGE_KEY = 'love_timing_archive'
 const DAILY_RITUAL_STORAGE_KEY = 'daily_ritual_archive'
 const DREAM_INTERPRETATION_STORAGE_KEY = 'dream_interpretation_archive'
+const TIME_CAPSULE_STORAGE_KEY = 'time_capsule_archive'
 const MAX_RECORDS = 50
 
 export const saveResult = (result: DivinationResult): void => {
@@ -267,6 +268,52 @@ export const clearAllDreamInterpretationRecords = (): void => {
   localStorage.removeItem(DREAM_INTERPRETATION_STORAGE_KEY)
 }
 
+export const saveTimeCapsuleResult = (result: TimeCapsuleResult): void => {
+  const records = getAllTimeCapsuleRecords()
+  records.unshift(result)
+  if (records.length > MAX_RECORDS) {
+    records.splice(MAX_RECORDS)
+  }
+  const encrypted = simpleEncrypt(JSON.stringify(records))
+  localStorage.setItem(TIME_CAPSULE_STORAGE_KEY, encrypted)
+}
+
+export const getAllTimeCapsuleRecords = (): TimeCapsuleResult[] => {
+  const encrypted = localStorage.getItem(TIME_CAPSULE_STORAGE_KEY)
+  if (!encrypted) return []
+  try {
+    const decrypted = simpleDecrypt(encrypted)
+    return JSON.parse(decrypted) || []
+  } catch {
+    return []
+  }
+}
+
+export const getTimeCapsuleRecordById = (id: string): TimeCapsuleResult | null => {
+  const records = getAllTimeCapsuleRecords()
+  return records.find(r => r.id === id) || null
+}
+
+export const updateTimeCapsuleResult = (result: TimeCapsuleResult): void => {
+  const records = getAllTimeCapsuleRecords()
+  const index = records.findIndex(r => r.id === result.id)
+  if (index > -1) {
+    records[index] = result
+    const encrypted = simpleEncrypt(JSON.stringify(records))
+    localStorage.setItem(TIME_CAPSULE_STORAGE_KEY, encrypted)
+  }
+}
+
+export const deleteTimeCapsuleRecord = (id: string): void => {
+  const records = getAllTimeCapsuleRecords().filter(r => r.id !== id)
+  const encrypted = simpleEncrypt(JSON.stringify(records))
+  localStorage.setItem(TIME_CAPSULE_STORAGE_KEY, encrypted)
+}
+
+export const clearAllTimeCapsuleRecords = (): void => {
+  localStorage.removeItem(TIME_CAPSULE_STORAGE_KEY)
+}
+
 export const getAllArchiveRecords = (): ArchiveRecord[] => {
   const divinationRecords = getAllRecords()
   const synastryRecords = getAllSynastryRecords()
@@ -275,12 +322,13 @@ export const getAllArchiveRecords = (): ArchiveRecord[] => {
   const loveTimingRecords = getAllLoveTimingRecords()
   const dailyRitualRecords = getAllDailyRitualRecords()
   const dreamInterpretationRecords = getAllDreamInterpretationRecords()
-  const allRecords = [...divinationRecords, ...synastryRecords, ...yearlyRecords, ...careerChoiceRecords, ...loveTimingRecords, ...dailyRitualRecords, ...dreamInterpretationRecords]
+  const timeCapsuleRecords = getAllTimeCapsuleRecords()
+  const allRecords = [...divinationRecords, ...synastryRecords, ...yearlyRecords, ...careerChoiceRecords, ...loveTimingRecords, ...dailyRitualRecords, ...dreamInterpretationRecords, ...timeCapsuleRecords]
   return allRecords.sort((a, b) => b.createdAt - a.createdAt)
 }
 
 export const getArchiveRecordById = (id: string): ArchiveRecord | null => {
-  return getRecordById(id) || getSynastryRecordById(id) || getYearlyRecordById(id) || getCareerChoiceRecordById(id) || getLoveTimingRecordById(id) || getDailyRitualRecordById(id) || getDreamInterpretationRecordById(id) || null
+  return getRecordById(id) || getSynastryRecordById(id) || getYearlyRecordById(id) || getCareerChoiceRecordById(id) || getLoveTimingRecordById(id) || getDailyRitualRecordById(id) || getDreamInterpretationRecordById(id) || getTimeCapsuleRecordById(id) || null
 }
 
 export const deleteArchiveRecord = (id: string): void => {
@@ -291,6 +339,7 @@ export const deleteArchiveRecord = (id: string): void => {
   deleteLoveTimingRecord(id)
   deleteDailyRitualRecord(id)
   deleteDreamInterpretationRecord(id)
+  deleteTimeCapsuleRecord(id)
 }
 
 export const clearAllArchiveRecords = (): void => {
@@ -301,4 +350,5 @@ export const clearAllArchiveRecords = (): void => {
   clearAllLoveTimingRecords()
   clearAllDailyRitualRecords()
   clearAllDreamInterpretationRecords()
+  clearAllTimeCapsuleRecords()
 }

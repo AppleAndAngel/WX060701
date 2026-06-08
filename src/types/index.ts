@@ -368,7 +368,56 @@ export interface DreamInterpretationResult {
 
 export type CareerChoiceOption = CareerOption
 
-export type ArchiveRecord = DivinationResult | SynastryResult | YearlyResult | CareerChoiceResult | LoveTimingResult | DailyRitualResult | DreamInterpretationResult
+export interface TimeCapsuleInput {
+  name: string
+  birthDate: string
+  question: string
+  targetDate: string
+  selectedRunes: number[]
+  starConnection: number[][]
+  timestamp: number
+}
+
+export interface TimeCapsuleSeal {
+  sealText: string
+  sealSymbol: string
+  encryptedHint: string
+}
+
+export interface TimeCapsulePrediction {
+  summary: string
+  keyThemes: string[]
+  potentialOutcomes: string[]
+  warningSigns: string[]
+  guidance: string
+}
+
+export interface TimeCapsuleRealityCheck {
+  actualSituation: string
+  accuracyRating: number
+  unexpectedChanges: string
+  lessonsLearned: string
+  completedAt: number
+}
+
+export interface TimeCapsuleResult {
+  id: string
+  type: 'time-capsule'
+  input: TimeCapsuleInput
+  coreNumbers: CoreNumbers
+  matrix: number[][]
+  starMap: StarMap
+  geometry: GeometryData
+  prediction: TimeCapsulePrediction
+  seal: TimeCapsuleSeal
+  realityCheck?: TimeCapsuleRealityCheck
+  calculationTrace: CalculationStep[]
+  createdAt: number
+  unlockAt: number
+  isUnlocked: boolean
+}
+
+export type ArchiveRecord = DivinationResult | SynastryResult | YearlyResult | CareerChoiceResult | LoveTimingResult | DailyRitualResult | DreamInterpretationResult | TimeCapsuleResult
 
 export interface Rune {
   id: number

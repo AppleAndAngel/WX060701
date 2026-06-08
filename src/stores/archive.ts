@@ -1,8 +1,8 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
-import { getAllArchiveRecords, deleteArchiveRecord, clearAllArchiveRecords, getAllDailyRitualRecords, getAllDreamInterpretationRecords } from '@/utils/storage'
+import { getAllArchiveRecords, deleteArchiveRecord, clearAllArchiveRecords, getAllDailyRitualRecords, getAllDreamInterpretationRecords, getAllTimeCapsuleRecords } from '@/utils/storage'
 import { calculateConsecutiveStreak, calculateCycleData, getMostFrequentThemes } from '@/algorithms/dailyRitual'
-import type { ArchiveRecord, DivinationResult, SynastryResult, YearlyResult, CareerChoiceResult, LoveTimingResult, DailyRitualResult, DreamInterpretationResult } from '@/types'
+import type { ArchiveRecord, DivinationResult, SynastryResult, YearlyResult, CareerChoiceResult, LoveTimingResult, DailyRitualResult, DreamInterpretationResult, TimeCapsuleResult } from '@/types'
 
 export const useArchiveStore = defineStore('archive', () => {
   const records = ref<ArchiveRecord[]>([])
@@ -20,6 +20,7 @@ export const useArchiveStore = defineStore('archive', () => {
   const loveTimingCount = computed(() => records.value.filter(r => isLoveTimingRecord(r)).length)
   const dailyRitualCount = computed(() => records.value.filter(r => isDailyRitualRecord(r)).length)
   const dreamInterpretationCount = computed(() => records.value.filter(r => isDreamInterpretationRecord(r)).length)
+  const timeCapsuleCount = computed(() => records.value.filter(r => isTimeCapsuleRecord(r)).length)
 
   const isSynastryRecord = (r: ArchiveRecord): r is SynastryResult => {
     return 'type' in r && r.type === 'synastry'
@@ -47,6 +48,10 @@ export const useArchiveStore = defineStore('archive', () => {
 
   const isDreamInterpretationRecord = (r: ArchiveRecord): r is DreamInterpretationResult => {
     return 'type' in r && r.type === 'dream-interpretation'
+  }
+
+  const isTimeCapsuleRecord = (r: ArchiveRecord): r is TimeCapsuleResult => {
+    return 'type' in r && r.type === 'time-capsule'
   }
 
   const consecutiveStreak = computed(() => {
@@ -101,6 +106,8 @@ export const useArchiveStore = defineStore('archive', () => {
         nums = [r.dailyNumber]
       } else if (isDreamInterpretationRecord(r)) {
         nums = [r.coreNumbers.lifePath, r.coreNumbers.destiny, r.coreNumbers.soul, r.coreNumbers.personality, r.dreamNumber]
+      } else if (isTimeCapsuleRecord(r)) {
+        nums = [r.coreNumbers.lifePath, r.coreNumbers.destiny, r.coreNumbers.soul, r.coreNumbers.personality]
       }
       nums.forEach(n => {
         stats[n] = (stats[n] || 0) + 1
@@ -167,6 +174,7 @@ export const useArchiveStore = defineStore('archive', () => {
     loveTimingCount,
     dailyRitualCount,
     dreamInterpretationCount,
+    timeCapsuleCount,
     numberStats,
     geometryStats,
     relationshipStats,
@@ -177,6 +185,7 @@ export const useArchiveStore = defineStore('archive', () => {
     isLoveTimingRecord,
     isDailyRitualRecord,
     isDreamInterpretationRecord,
+    isTimeCapsuleRecord,
     consecutiveStreak,
     cycleData,
     frequentThemes,
