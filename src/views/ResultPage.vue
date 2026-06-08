@@ -5,7 +5,10 @@ import { useDivinationStore } from '@/stores/divination'
 import GeometryChart from '@/components/result/GeometryChart.vue'
 import InterpretationText from '@/components/result/InterpretationText.vue'
 import CalculationTrace from '@/components/result/CalculationTrace.vue'
+import ShareCardModal from '@/components/result/ShareCardModal.vue'
 import MysticButton from '@/components/common/MysticButton.vue'
+import { generateDivinationShareCard } from '@/utils/shareCard'
+import type { ShareCardData } from '@/utils/shareCard'
 
 const route = useRoute()
 const router = useRouter()
@@ -13,8 +16,21 @@ const store = useDivinationStore()
 const activeTab = ref<'interpretation' | 'trace'>('interpretation')
 const isLoading = ref(true)
 const notFound = ref(false)
+const showShareModal = ref(false)
+const shareCardData = ref<ShareCardData | null>(null)
 
 const result = computed(() => store.currentResult)
+
+const openShareModal = () => {
+  if (result.value) {
+    shareCardData.value = generateDivinationShareCard(result.value)
+    showShareModal.value = true
+  }
+}
+
+const closeShareModal = () => {
+  showShareModal.value = false
+}
 
 onMounted(() => {
   const id = route.params.id as string
@@ -225,11 +241,20 @@ const goToArchive = () => {
           <MysticButton variant="primary" size="lg" @click="newDivination">
             ✦ 再次占卜
           </MysticButton>
+          <MysticButton variant="secondary" size="lg" @click="openShareModal">
+            ✧ 生成分享卡
+          </MysticButton>
           <MysticButton variant="secondary" size="lg" @click="goToArchive">
             ☰ 查看档案
           </MysticButton>
         </div>
       </div>
     </template>
+
+    <ShareCardModal
+      :show="showShareModal"
+      :card-data="shareCardData"
+      @close="closeShareModal"
+    />
   </div>
 </template>
