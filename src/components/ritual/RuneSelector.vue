@@ -1,16 +1,24 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { useDivinationStore } from '@/stores/divination'
-import type { Rune } from '@/types'
+import type { Rune, RitualStore } from '@/types'
 
-const store = useDivinationStore()
+interface Props {
+  store?: RitualStore
+}
+
+const props = withDefaults(defineProps<Props>(), {
+  store: undefined
+})
+
+const store = computed(() => props.store || useDivinationStore())
 
 const isSelected = (runeId: number) => {
-  return store.selectedRunes.includes(runeId)
+  return store.value.selectedRunes.includes(runeId)
 }
 
 const handleRuneClick = (rune: Rune) => {
-  store.toggleRune(rune.id)
+  store.value.toggleRune(rune.id)
 }
 </script>
 

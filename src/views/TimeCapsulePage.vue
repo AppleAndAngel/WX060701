@@ -176,8 +176,13 @@ const goToList = () => {
             <p class="font-body text-silver/80">
               选择 3-5 个符文，它们将成为你时间胶囊的守护印记
             </p>
+            <p class="font-mono text-sm text-gold mt-2">
+              已选择 {{ store.selectedRunes.length }}/5 个符文
+              <span v-if="store.selectedRunes.length >= 3" class="text-emerald-400 ml-2">✓ 可以继续</span>
+              <span v-else class="text-silver/50 ml-2">还需选择 {{ 3 - store.selectedRunes.length }} 个</span>
+            </p>
           </div>
-          <RuneSelector />
+          <RuneSelector :store="store" />
         </div>
         
         <div v-else-if="store.phase === 'stars'" key="stars">
@@ -186,10 +191,15 @@ const goToList = () => {
               连接命运星轨
             </h2>
             <p class="font-body text-silver/80">
-              点击星星，连接至少 2 条星轨，为你的时间胶囊注入宇宙能量
+              拖动鼠标连接至少 2 条星轨，为你的时间胶囊注入宇宙能量
+            </p>
+            <p class="font-mono text-sm text-gold mt-2">
+              已连接 {{ store.starConnections.length }} 条星轨
+              <span v-if="store.starConnections.length >= 2" class="text-emerald-400 ml-2">✓ 可以封存</span>
+              <span v-else class="text-silver/50 ml-2">还需连接 {{ 2 - store.starConnections.length }} 条</span>
             </p>
           </div>
-          <StarConnector />
+          <StarConnector :store="store" />
         </div>
         
         <div v-else-if="store.phase === 'calculating'" key="calculating">

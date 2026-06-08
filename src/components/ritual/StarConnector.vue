@@ -1,8 +1,17 @@
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted, watch } from 'vue'
+import { ref, onMounted, onUnmounted, watch, computed } from 'vue'
 import { useDivinationStore } from '@/stores/divination'
+import type { RitualStore } from '@/types'
 
-const store = useDivinationStore()
+interface Props {
+  store?: RitualStore
+}
+
+const props = withDefaults(defineProps<Props>(), {
+  store: undefined
+})
+
+const store = computed(() => props.store || useDivinationStore())
 const svgRef = ref<SVGSVGElement | null>(null)
 const containerRef = ref<HTMLDivElement | null>(null)
 const isDragging = ref(false)
@@ -34,7 +43,7 @@ const findNearestPoint = (x: number, y: number): number | null => {
   let nearestId: number | null = null
   let minDist = Infinity
   
-  store.starPoints.forEach(point => {
+  store.value.starPoints.forEach(point => {
     const dist = Math.sqrt(Math.pow(point.x - x, 2) + Math.pow(point.y - y, 2))
     if (dist < 40 && dist < minDist) {
       minDist = dist
@@ -75,7 +84,7 @@ const handleEnd = (e: MouseEvent | TouchEvent) => {
   if (point) {
     const nearestId = findNearestPoint(point.x, point.y)
     if (nearestId !== null && nearestId !== startPoint.value) {
-      store.addStarConnection(startPoint.value, nearestId)
+      store.value.addStarConnection(startPoint.value, nearestId)
     }
   }
   
@@ -84,7 +93,7 @@ const handleEnd = (e: MouseEvent | TouchEvent) => {
 }
 
 const handleUndo = () => {
-  store.removeLastStarConnection()
+  store.value.removeLastStarConnection()
 }
 
 const updateSize = () => {
@@ -96,7 +105,7 @@ const updateSize = () => {
 
 onMounted(() => {
   updateSize()
-  store.initStarPoints(svgSize.value.width, svgSize.value.height)
+  store.value.initStarPoints(svgSize.value.width, svgSize.value.height)
   window.addEventListener('resize', updateSize)
 })
 
@@ -104,11 +113,11 @@ onUnmounted(() => {
   window.removeEventListener('resize', updateSize)
 })
 
-watch(() => store.phase, (phase) => {
+watch(() => store.value.phase, (phase) => {
   if (phase === 'stars') {
     setTimeout(() => {
       updateSize()
-      store.initStarPoints(svgSize.value.width, svgSize.value.height)
+      store.value.initStarPoints(svgSize.value.width, svgSize.value.height)
     }, 100)
   }
 })

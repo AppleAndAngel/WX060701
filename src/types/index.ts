@@ -435,6 +435,18 @@ export interface StarPoint {
 
 export type RitualPhase = 'input' | 'runes' | 'stars' | 'calculating' | 'complete'
 
+export interface RitualStore {
+  selectedRunes: number[]
+  runes: Rune[]
+  starPoints: StarPoint[]
+  starConnections: number[][]
+  phase: RitualPhase
+  toggleRune: (runeId: number) => void
+  addStarConnection: (fromId: number, toId: number) => void
+  removeLastStarConnection: () => void
+  initStarPoints: (width: number, height: number) => void
+}
+
 export interface PersonInfo {
   name: string
   birthDate: string
